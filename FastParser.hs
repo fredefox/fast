@@ -36,6 +36,12 @@ quotedString = do
             c <- anyChar
             if c == '"' then unexpected $ [c] else return c
 
+name :: Parser Name
+name = do
+    c <- letter
+    s <- many alphaNum <|> string "_"
+    return $ c:s
+
 prog :: Parser Prog
 prog = undefined
 
