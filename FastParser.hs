@@ -20,13 +20,17 @@ module FastParser (Error, parseString, parseFile) where
 
 import FastAST
 import Text.Parsec
+import Text.ParserCombinators.Parsec
 
 -- | You may change this type to whatever you want - just make sure it
 -- is an instance of 'Show'.
 type Error = ParseError
 
+prog :: Parser Prog
+prog = undefined
+
 parseString :: String -> Either Error Prog
-parseString = undefined
+parseString = parse prog "Fast"
 
 parseFile :: FilePath -> IO (Either Error Prog)
-parseFile = undefined
+parseFile path = fmap parseString $ readFile path
