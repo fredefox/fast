@@ -21,15 +21,15 @@ RecvDecl         ::= ''
 ParamsEntry      ::= ''
                   |  Params
 
-Params          ::=  Param
+Params           ::= Param
                   |  Param ',' Params
 
 Param            ::= Name
 
-ArgsEntry            ::= ''
+ArgsEntry        ::= ''
                   |  Args
 
-Args            ::= Expr
+Args             ::= Expr
                   |  Expr ',' Args
 
 Exprs            ::= ''

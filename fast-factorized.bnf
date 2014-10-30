@@ -21,16 +21,20 @@ RecvDecl         ::= ''
 ParamsEntry      ::= ''
                   |  Params
 
-Params          ::=  Param
-                  |  Param ',' Params
+Params           ::=  Param ParamsOpt
+
+ParamsOpt        ::= ''
+                  |  ',' Params
 
 Param            ::= Name
 
-ArgsEntry            ::= ''
+ArgsEntry        ::= ''
                   |  Args
 
-Args            ::= Expr
-                  |  Expr ',' Args
+Args             ::= Expr ArgsOpt
+
+ArgsOpt          ::= ''
+                  |  ',' Args
 
 Exprs            ::= ''
                   |  Expr ';' Exprs
@@ -59,5 +63,7 @@ Case             ::= Pattern '->' '{' Exprs '}'
 
 Pattern          ::= Integer
                   |  String
-                  |  Name '(' ParamsEntry ')'
-                  |  Name
+                  |  Name PatternOpt
+
+PatternOpt       ::= '(' ParamsEntry ')'
+                  |  ''
