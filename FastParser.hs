@@ -28,13 +28,7 @@ integer = fmap read $ many1 digit
 quotedString :: Parser String
 quotedString = do
     char '"'
-    s <- many notQuot
-    char '"'
-    return s where
-        notQuot :: Parser Char
-        notQuot = do
-            c <- anyChar
-            if c == '"' then unexpected $ [c] else return c
+    manyTill anyChar $ char '"'
 
 name :: Parser Name
 name = do
