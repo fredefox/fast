@@ -8,36 +8,36 @@ ClassDecl        ::= 'class' Name '{'
                      '}'
 
 ConstructorDecl  ::= ''
-                  |  'new' '(' Params ')' '{' Exprs '}'
+                  |  'new' '(' ParamsEntry ')' '{' Exprs '}'
 
 NamedMethodDecls ::= ''
                   |  NamedMethodDecl NamedMethodDecls
 
-NamedMethodDecl  ::= Name '(' Params ')' '{' Exprs '}'
+NamedMethodDecl  ::= Name '(' ParamsEntry ')' '{' Exprs '}'
 
 RecvDecl         ::= ''
                   |  'receive' '(' Param ')' '{' Exprs '}'
 
-Params           ::= ''
-                  |  Params*
+ParamsEntry      ::= ''
+                  |  Params
 
-Params*          ::= Param
-                  |  Param ',' Params*
+Params          ::= Param
+                  |  Param ',' Params
 
 Param            ::= Name
 
-Args             ::= ''
-                  |  Args*
+ArgsEntry            ::= ''
+                  |  Args
 
-Args*            ::= Expr
-                  |  Expr ',' Args*
+Args            ::= Expr
+                  |  Expr ',' Args
 
 Exprs            ::= ''
                   |  Expr ';' Exprs
 
 Expr             ::= Integer
                   |  String
-                  |  Name '(' Args ')'
+                  |  Name '(' ArgsEntry')'
                   |  'self'
                   |  'return' Expr
                   |  'set' 'self' '.' Name '=' Expr
@@ -48,8 +48,8 @@ Expr             ::= Integer
                   |  Expr '/' Expr
                   |  'match' Expr Cases
                   |  'send' '(' Expr ',' Expr ')'
-                  |  Expr '.' Name '(' Args ')'
-                  |  'new' Name '(' Args ')'
+                  |  Expr '.' Name '(' ArgsEntry')'
+                  |  'new' Name '(' ArgsEntry')'
                   |  '(' Expr ')'
 
 Cases            ::= ''
@@ -59,5 +59,5 @@ Case             ::= Pattern '->' '{' Exprs '}'
 
 Pattern          ::= Integer
                   |  String
-                  |  Name '(' Params ')'
+                  |  Name '(' ParamsEntry ')'
                   |  Name
