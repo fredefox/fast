@@ -19,10 +19,11 @@
 module FastParser (Error, parseString, parseFile) where
 
 import FastAST
+import Text.Parsec
 
 -- | You may change this type to whatever you want - just make sure it
 -- is an instance of 'Show'.
-type Error = ()
+type Error = ParseError
 
 parseString :: String -> Either Error Prog
 parseString = undefined
