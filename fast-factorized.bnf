@@ -50,15 +50,17 @@ Expr0            ::= Integer
                   |  'set' 'self' '.' Name '=' ExprEntry
                   |  'set' Name '=' ExprEntry
 
-Expr1            ::= ExprEntry '+' ExprEntry
-                  |  ExprEntry '-' ExprEntry
-                  |  ExprEntry '*' ExprEntry
-                  |  ExprEntry '/' ExprEntry
-                  |  'match' ExprEntry Cases
-                  |  'send' '(' ExprEntry ',' ExprEntry ')'
-                  |  ExprEntry '.' Name '(' ArgsEntry')'
-                  |  'new' Name '(' ArgsEntry')'
-                  |  '(' ExprEntry ')'
+Expr1            ::= 'match' ExprEntry Cases Expr1Opt
+                  |  'send' '(' ExprEntry ',' ExprEntry ')' Expr1Opt
+                  |  ExprEntry '.' Name '(' ArgsEntry')' Expr1Opt
+                  |  'new' Name '(' ArgsEntry')' Expr1Opt
+                  |  '(' ExprEntry ')' Expr1Opt
+
+Expr1Opt         ::= '+' ExprEntry Expr1Opt
+                  |  '-' ExprEntry Expr1Opt
+                  |  '*' ExprEntry Expr1Opt
+                  |  '/' ExprEntry Expr1Opt
+                  |  ''
 
 Cases            ::= ''
                   |  Case Cases
