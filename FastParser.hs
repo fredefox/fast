@@ -53,7 +53,18 @@ consDecl = do
     }
 
 namedMethodDecl :: Parser NamedMethodDecl
-namedMethodDecl = undefined -- TODO
+namedMethodDecl = do
+    n <- name
+    char '('
+    params <- name `sepBy` char ','
+    char ')'
+    char '{'
+    exprs <- expr `sepBy` char ';'
+    char '}'
+    return $ NamedMethodDecl n MethodDecl {
+        methodParameters = params,
+        methodBody = exprs
+    }
 
 receiveDecl :: Parser ReceiveDecl
 receiveDecl = undefined -- TODO
