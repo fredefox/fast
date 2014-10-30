@@ -44,7 +44,7 @@ ExprEntry        ::= Expr0
 
 Expr0            ::= Integer
                   |  String
-                  |  Name '(' ArgsEntry')'
+                  |  Name '(' ArgsEntry ')'
                   |  'self'
                   |  'return' ExprEntry
                   |  'set' 'self' '.' Name '=' ExprEntry

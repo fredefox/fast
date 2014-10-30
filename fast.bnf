@@ -37,7 +37,7 @@ Exprs            ::= ''
 
 Expr             ::= Integer
                   |  String
-                  |  Name '(' ArgsEntry')'
+                  |  Name '(' ArgsEntry ')'
                   |  'self'
                   |  'return' Expr
                   |  'set' 'self' '.' Name '=' Expr

@@ -20,7 +20,7 @@ module FastParser (Error, parseString, parseFile) where
 
 import FastAST
 import Text.Parsec
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding (try)
 
 integer :: Parser Integer
 integer = fmap read $ many1 digit
@@ -37,7 +37,33 @@ name = do
     return $ c:s
 
 expr :: Parser Expr
-expr = undefined -- TODO
+expr = expr0 <|> expr1 where
+    expr0 = (integer >>= \i -> return $ IntConst i)
+        <|> (name >>= \n -> return $ StringConst n)
+        <|> fnApplication
+        <|> (string "self" >>= (const $ return Self))
+        <|> (string "return" >> expr)
+        <|> setField
+        <|> setVar where
+            fnApplication = do
+                n <- name
+                char '('
+                exprs <- expr `sepBy` char ','
+                return $ TermLiteral n exprs
+            setField = do
+                string "set"
+                string "self" >> char '.'
+                n <- name
+                char '='
+                e <- expr
+                return $ SetField n e
+            setVar = do
+                string "set" >> string "self" >> char '.'
+                n <- name
+                char '='
+                e <- expr
+                return $ SetVar n e
+    expr1 = undefined
 
 consDecl :: Parser ConstructorDecl
 consDecl = do
