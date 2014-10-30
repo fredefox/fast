@@ -31,30 +31,34 @@ Param            ::= Name
 ArgsEntry        ::= ''
                   |  Args
 
-Args             ::= Expr ArgsOpt
+Args             ::= ExprEntry ArgsOpt
 
 ArgsOpt          ::= ''
                   |  ',' Args
 
 Exprs            ::= ''
-                  |  Expr ';' Exprs
+                  |  ExprEntry ';' Exprs
 
-Expr             ::= Integer
+ExprEntry        ::= Expr0
+                  |  Expr1
+
+Expr0            ::= Integer
                   |  String
                   |  Name '(' ArgsEntry')'
                   |  'self'
-                  |  'return' Expr
-                  |  'set' 'self' '.' Name '=' Expr
-                  |  'set' Name '=' Expr
-                  |  Expr '+' Expr
-                  |  Expr '-' Expr
-                  |  Expr '*' Expr
-                  |  Expr '/' Expr
-                  |  'match' Expr Cases
-                  |  'send' '(' Expr ',' Expr ')'
-                  |  Expr '.' Name '(' ArgsEntry')'
+                  |  'return' ExprEntry
+                  |  'set' 'self' '.' Name '=' ExprEntry
+                  |  'set' Name '=' ExprEntry
+
+Expr1            ::= ExprEntry '+' ExprEntry
+                  |  ExprEntry '-' ExprEntry
+                  |  ExprEntry '*' ExprEntry
+                  |  ExprEntry '/' ExprEntry
+                  |  'match' ExprEntry Cases
+                  |  'send' '(' ExprEntry ',' ExprEntry ')'
+                  |  ExprEntry '.' Name '(' ArgsEntry')'
                   |  'new' Name '(' ArgsEntry')'
-                  |  '(' Expr ')'
+                  |  '(' ExprEntry ')'
 
 Cases            ::= ''
                   |  Case Cases
