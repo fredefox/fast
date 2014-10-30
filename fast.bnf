@@ -1,0 +1,63 @@
+Program          ::= ClassDecls
+
+ClassDecls       ::= ''
+                  |  ClassDecl ClassDecls
+
+ClassDecl        ::= 'class' Name '{'
+                         ConstructorDecl NamedMethodDecls RecvDecl
+                     '}'
+
+ConstructorDecl  ::= ''
+                  |  'new' '(' Params ')' '{' Exprs '}'
+
+NamedMethodDecls ::= ''
+                  |  NamedMethodDecl NamedMethodDecls
+
+NamedMethodDecl  ::= Name '(' Params ')' '{' Exprs '}'
+
+RecvDecl         ::= ''
+                  |  'receive' '(' Param ')' '{' Exprs '}'
+
+Params           ::= ''
+                  |  Params*
+
+Params*          ::= Param
+                  |  Param ',' Params*
+
+Param            ::= Name
+
+Args             ::= ''
+                  |  Args*
+
+Args*            ::= Expr
+                  |  Expr ',' Args*
+
+Exprs            ::= ''
+                  |  Expr ';' Exprs
+
+Expr             ::= Integer
+                  |  String
+                  |  Name '(' Args ')'
+                  |  'self'
+                  |  'return' Expr
+                  |  'set' 'self' '.' Name '=' Expr
+                  |  'set' Name '=' Expr
+                  |  Expr '+' Expr
+                  |  Expr '-' Expr
+                  |  Expr '*' Expr
+                  |  Expr '/' Expr
+                  |  'match' Expr Cases
+                  |  'send' '(' Expr ',' Expr ')'
+                  |  Expr '.' Name '(' Args ')'
+                  |  'new' Name '(' Args ')'
+                  |  '(' Expr ')'
+
+Cases            ::= ''
+                  |  Case Cases
+
+Case             ::= Pattern '->' '{' Exprs '}'
+
+Pattern          ::= Integer
+                  |  String
+                  |  Name '(' Params ')'
+                  |  Name
