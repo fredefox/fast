@@ -67,7 +67,18 @@ namedMethodDecl = do
     }
 
 receiveDecl :: Parser ReceiveDecl
-receiveDecl = undefined -- TODO
+receiveDecl = do
+    string "receive"
+    char '('
+    p <- name
+    char ')'
+    char '{'
+    exprs <- expr `sepBy` char ';'
+    char '}'
+    return $ ReceiveDecl {
+        receiveParam = p,
+        receiveBody = exprs
+    }
 
 classDecl :: Parser ClassDecl
 classDecl = do
