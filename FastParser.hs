@@ -36,8 +36,29 @@ name = do
     s <- many alphaNum <|> string "_"
     return $ c:s
 
+consDecl :: Parser ConstructorDecl
+consDecl = undefined -- TODO
+
+namedMethodDecl :: Parser NamedMethodDecl
+namedMethodDecl = undefined -- TODO
+
+receiveDecl :: Parser ReceiveDecl
+receiveDecl = undefined -- TODO
+
 classDecl :: Parser ClassDecl
-classDecl = undefined
+classDecl = do
+    string "class"
+    n <- name
+    char '{'
+    cons <- optionMaybe consDecl
+    methods <- many namedMethodDecl
+    recv <- optionMaybe receiveDecl
+    return ClassDecl {
+        className = n,
+        classConstructor = cons,
+        classMethods = methods,
+        classReceive = recv
+    }
 
 prog :: Parser Prog
 prog = many classDecl
