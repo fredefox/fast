@@ -22,12 +22,31 @@ import FastAST
 import Text.Parsec
 import Text.ParserCombinators.Parsec
 
--- | You may change this type to whatever you want - just make sure it
--- is an instance of 'Show'.
-type Error = ParseError
+integer :: Parser Integer
+integer = fmap read $ many1 digit
+
+quotedString :: Parser String
+quotedString = do
+    char '"'
+    s <- many notQuot
+    char '"'
+    return s where
+        notQuot :: Parser Char
+        notQuot = do
+            c <- anyChar
+            if c == '"' then unexpected $ [c] else return c
 
 prog :: Parser Prog
 prog = undefined
+
+{-
+ - API
+ - ===
+ -
+ - Below the API is defined.
+ -
+ -}
+type Error = ParseError
 
 parseString :: String -> Either Error Prog
 parseString = parse prog "Fast"
