@@ -36,6 +36,23 @@ name = do
     s <- many alphaNum <|> string "_"
     return $ c:s
 
+{-
+ - This method has a rather intricate structure. It is preserved in this single
+ - block to illustrate how the different components interact. Please refer to
+ - the [factorized bnf](./fast-factorized.bnf) and [the parser-notes]. It is
+ - structured like this to account for the fact that the original definition
+ - ([./fast.bnf]) was lefft-recursive - meaning that it had a possible parse
+ - that would never terminate since it could always choose the production rule
+ - where it refered to itself as the first element in the production-sequence.
+ -
+ - In [the parser-notes] factorization of left-recursive nonterminals are only
+ - shown for one class of production-rules. Namely those on the form:
+ -
+ -     A ::= A g_1 | ... | A g_m | f_1 | ... | f_n
+ -
+ - Since this production-rule is *not* on that form it had to be chopped up
+ - into smaller pieces.
+ -}
 expr :: Parser Expr
 expr = expr0 <|> expr1 where
     expr0 = (integer >>= \i -> return $ IntConst i)
@@ -63,7 +80,11 @@ expr = expr0 <|> expr1 where
                 char '='
                 e <- expr
                 return $ SetVar n e
-    expr1 = undefined
+    expr1 = expr1a <|> expr1b where
+        expr1a = undefined
+        expr1b = undefined where
+            expr1bOpt = undefined
+        expr1Opt = undefined
 
 consDecl :: Parser ConstructorDecl
 consDecl = do
