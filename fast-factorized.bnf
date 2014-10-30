@@ -56,10 +56,10 @@ Expr1Entry       ::= Expr1a
 Expr1a           ::= 'match' ExprEntry Cases Expr1EntryOpt
                   |  'send' '(' ExprEntry ',' ExprEntry ')' Expr1EntryOpt
 
-Expr1b           ::= 'new' Name '(' ArgsEntry')' Expr1EntryOpt Expr1bOpt
+Expr1b           ::= 'new' Name '(' ArgsEntry ')' Expr1EntryOpt Expr1bOpt
                   |  '(' ExprEntry ')' Expr1EntryOpt Expr1bOpt
 
-Expr1bOpt        ::= '.' Name '(' ArgsEntry')' Expr1EntryOpt
+Expr1bOpt        ::= '.' Name '(' ArgsEntry ')' Expr1EntryOpt
                   |  ''
 
 

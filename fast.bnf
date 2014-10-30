@@ -48,8 +48,8 @@ Expr             ::= Integer
                   |  Expr '/' Expr
                   |  'match' Expr Cases
                   |  'send' '(' Expr ',' Expr ')'
-                  |  Expr '.' Name '(' ArgsEntry')'
-                  |  'new' Name '(' ArgsEntry')'
+                  |  Expr '.' Name '(' ArgsEntry ')'
+                  |  'new' Name '(' ArgsEntry ')'
                   |  '(' Expr ')'
 
 Cases            ::= ''

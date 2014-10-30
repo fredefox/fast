@@ -98,9 +98,25 @@ expr = expr0 <|> expr1 where
                 e1 <- expr
                 char ')'
                 expr1Opt $ SendMessage e0 e1
-        expr1b = undefined where
+        expr1b = newDef <|> par where
+            newDef = do
+                string "new"
+                n <- name
+                char '('
+                args <- expr `sepBy` char ','
+                char ')'
+                e <- expr1Opt $ New n args
+                expr1bOpt e
+            par = do
+                char '('
+                e <- expr
+                char ')'
+                e' <- expr1Opt e
+                expr1bOpt e
+            -- Method application (CallMethod)
             expr1bOpt :: Expr -> Parser Expr
             expr1bOpt inherited = undefined
+        -- Arithmetic
         expr1Opt :: Expr -> Parser Expr
         expr1Opt inherited = undefined
 
