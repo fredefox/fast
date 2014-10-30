@@ -36,8 +36,11 @@ name = do
     s <- many alphaNum <|> string "_"
     return $ c:s
 
+classDecl :: Parser ClassDecl
+classDecl = undefined
+
 prog :: Parser Prog
-prog = undefined
+prog = many classDecl
 
 {-
  - API
