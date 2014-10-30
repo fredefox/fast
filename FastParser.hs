@@ -36,6 +36,9 @@ name = do
     s <- many alphaNum <|> string "_"
     return $ c:s
 
+fastCase :: Parser Case
+fastCase = undefined
+
 {-
  - This method has a rather intricate structure. It is preserved in this single
  - block to illustrate how the different components interact. Please refer to
@@ -81,10 +84,25 @@ expr = expr0 <|> expr1 where
                 e <- expr
                 return $ SetVar n e
     expr1 = expr1a <|> expr1b where
-        expr1a = undefined
+        expr1a = match <|> send where
+            match = do
+                string "match"
+                e <- expr
+                cs <- many fastCase
+                expr1Opt $ Match e cs
+            send = do
+                string "send"
+                char '('
+                e0 <- expr
+                char ','
+                e1 <- expr
+                char ')'
+                expr1Opt $ SendMessage e0 e1
         expr1b = undefined where
-            expr1bOpt = undefined
-        expr1Opt = undefined
+            expr1bOpt :: Expr -> Parser Expr
+            expr1bOpt inherited = undefined
+        expr1Opt :: Expr -> Parser Expr
+        expr1Opt inherited = undefined
 
 consDecl :: Parser ConstructorDecl
 consDecl = do
