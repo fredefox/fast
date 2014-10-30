@@ -115,10 +115,38 @@ expr = expr0 <|> expr1 where
                 expr1bOpt e
             -- Method application (CallMethod)
             expr1bOpt :: Expr -> Parser Expr
-            expr1bOpt inherited = undefined
+            expr1bOpt inherited = invocation
+                <|> return inherited where
+                    invocation = do
+                        char '.'
+                        n <- name
+                        char '('
+                        args <- expr `sepBy` char ','
+                        char ')'
+                        expr1Opt $ CallMethod inherited n args
         -- Arithmetic
         expr1Opt :: Expr -> Parser Expr
-        expr1Opt inherited = undefined
+        expr1Opt inherited = plus
+            <|> minus
+            <|> mult
+            <|> division
+            <|> return inherited where
+                plus = do
+                    char '+'
+                    e <- expr
+                    expr1Opt e
+                minus = do
+                    char '-'
+                    e <- expr
+                    expr1Opt e
+                mult = do
+                    char '*'
+                    e <- expr
+                    expr1Opt e
+                division = do
+                    char '/'
+                    e <- expr
+                    expr1Opt e
 
 consDecl :: Parser ConstructorDecl
 consDecl = do
