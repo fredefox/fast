@@ -1,0 +1,75 @@
+Program          ::= ClassDecls
+
+ClassDecls       ::= ''
+                  |  ClassDecl ClassDecls
+
+ClassDecl        ::= 'class' Name '{'
+                         ConstructorDecl NamedMethodDecls RecvDecl
+                     '}'
+
+ConstructorDecl  ::= ''
+                  |  'new' '(' ParamsEntry ')' '{' Exprs '}'
+
+NamedMethodDecls ::= ''
+                  |  NamedMethodDecl NamedMethodDecls
+
+NamedMethodDecl  ::= Name '(' ParamsEntry ')' '{' Exprs '}'
+
+RecvDecl         ::= ''
+                  |  'receive' '(' Param ')' '{' Exprs '}'
+
+ParamsEntry      ::= ''
+                  |  Params
+
+Params           ::=  Param ParamsOpt
+
+ParamsOpt        ::= ''
+                  |  ',' Params
+
+Param            ::= Name
+
+ArgsEntry        ::= ''
+                  |  Args
+
+Args             ::= ExprEntry ArgsOpt
+
+ArgsOpt          ::= ''
+                  |  ',' Args
+
+Exprs            ::= ''
+                  |  ExprEntry ';' Exprs
+
+ExprEntry        ::= Expr0
+                  |  Expr1
+
+Expr0            ::= Integer
+                  |  String
+                  |  Name '(' ArgsEntry')'
+                  |  'self'
+                  |  'return' ExprEntry
+                  |  'set' 'self' '.' Name '=' ExprEntry
+                  |  'set' Name '=' ExprEntry
+
+Expr1            ::= 'match' ExprEntry Cases Expr1Opt
+                  |  'send' '(' ExprEntry ',' ExprEntry ')' Expr1Opt
+                  |  ExprEntry '.' Name '(' ArgsEntry')' Expr1Opt
+                  |  'new' Name '(' ArgsEntry')' Expr1Opt
+                  |  '(' ExprEntry ')' Expr1Opt
+
+Expr1Opt         ::= '+' ExprEntry Expr1Opt
+                  |  '-' ExprEntry Expr1Opt
+                  |  '*' ExprEntry Expr1Opt
+                  |  '/' ExprEntry Expr1Opt
+                  |  ''
+
+Cases            ::= ''
+                  |  Case Cases
+
+Case             ::= Pattern '->' '{' Exprs '}'
+
+Pattern          ::= Integer
+                  |  String
+                  |  Name PatternOpt
+
+PatternOpt       ::= '(' ParamsEntry ')'
+                  |  ''
