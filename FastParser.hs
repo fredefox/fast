@@ -36,8 +36,21 @@ name = do
     s <- many alphaNum <|> string "_"
     return $ c:s
 
+expr :: Parser Expr
+expr = undefined -- TODO
+
 consDecl :: Parser ConstructorDecl
-consDecl = undefined -- TODO
+consDecl = do
+    string "new"
+    char '('
+    p <- name `sepBy` char ','
+    char '{'
+    e <- expr `sepBy` char ';'
+    char '}'
+    return MethodDecl {
+        methodParameters = p,
+        methodBody = e
+    }
 
 namedMethodDecl :: Parser NamedMethodDecl
 namedMethodDecl = undefined -- TODO
