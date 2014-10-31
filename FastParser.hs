@@ -1,6 +1,6 @@
 {-
- - Parser for Fast
- - ===============
+ - Parser for "Fast"
+ - =================
  -
  - This module implements a parser for the language Fast.
  -
