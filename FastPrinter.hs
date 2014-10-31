@@ -37,7 +37,14 @@ printQuotedString :: String -> Doc
 --
 --     '"' `elem` s
 --
-printQuotedString s = text $ '"' : s ++ ['"']
+printQuotedString s = text $ '"' : s' ++ ['"'] where
+-- To accomplish this, I could just filter out the quotes. But for now I'll
+-- actually let my printer be able to produce things that are not valid
+-- according to the BNF. It must then be the QuickChecks responsibility of not
+-- producing this sort of input. An alternate thing I could do would be to
+-- throw an error if illegal input is given to various functions from this
+-- library. But since it is not library code I will ignore this.
+    s' = s -- filter (\c -> c /= '"') s
 
 printTerm :: AST.Term -> Doc
 -- TODO
