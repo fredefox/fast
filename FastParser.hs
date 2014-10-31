@@ -86,12 +86,12 @@ expr = expr0 <|> expr1 where
     expr0 = (integer >>= \i -> return $ IntConst i)
         <|> (quotedString >>= \s -> return $ StringConst s)
         <|> (name >>= \n -> return $ TermLiteral n [])
-        <|> fnApplication
+        <|> termLiteral
         <|> (string "self" >>= (const $ return Self))
         <|> (string "return" >> expr)
         <|> setField
         <|> setVar where
-            fnApplication = do
+            termLiteral = do
                 n <- name
                 char '('
                 exprs <- expr `sepBy` char ','
@@ -99,33 +99,33 @@ expr = expr0 <|> expr1 where
             setField = do
                 string "set"
                 string "self" >> char '.'
-                n <- name
+                fld <- name
                 char '='
-                e <- expr
-                return $ SetField n e
+                val <- expr
+                return $ SetField fld val
             setVar = do
                 string "set" >> string "self" >> char '.'
-                n <- name
+                var <- name
                 char '='
-                e <- expr
-                return $ SetVar n e
+                val <- expr
+                return $ SetVar var val
     expr1 = expr1a <|> expr1b where
         expr1a = match <|> send <|> self where
             match = do
                 string "match"
-                e <- expr
+                key <- expr
                 char '{'
-                cs <- many fastCase
+                values <- many fastCase
                 char '}'
-                expr1Opt $ Match e cs
+                expr1Opt $ Match key values
             send = do
                 string "send"
                 char '('
-                e0 <- expr
+                rcpt <- expr
                 char ','
-                e1 <- expr
+                msg <- expr
                 char ')'
-                expr1Opt $ SendMessage e0 e1
+                expr1Opt $ SendMessage rcpt msg
             self = do
                 string "self"
                 char '.'
@@ -152,11 +152,11 @@ expr = expr0 <|> expr1 where
                 <|> return inherited where
                     invocation = do
                         char '.'
-                        n <- name
+                        rcpt <- name
                         char '('
                         args <- expr `sepBy` char ','
                         char ')'
-                        expr1Opt $ CallMethod inherited n args
+                        expr1Opt $ CallMethod inherited rcpt args
         -- Arithmetic
         expr1Opt :: Expr -> Parser Expr
         expr1Opt inherited = plus
@@ -201,11 +201,11 @@ namedMethodDecl = do
     params <- name `sepBy` char ','
     char ')'
     char '{'
-    exprs <- expr `sepBy` char ';'
+    body <- expr `sepBy` char ';'
     char '}'
     return $ NamedMethodDecl n MethodDecl {
         methodParameters = params,
-        methodBody = exprs
+        methodBody = body
     }
 
 receiveDecl :: Parser ReceiveDecl
@@ -225,13 +225,13 @@ receiveDecl = do
 classDecl :: Parser ClassDecl
 classDecl = do
     string "class"
-    n <- name
+    clsNm <- name
     char '{'
     cons <- optionMaybe consDecl
     methods <- many namedMethodDecl
     recv <- optionMaybe receiveDecl
     return ClassDecl {
-        className = n,
+        className = clsNm,
         classConstructor = cons,
         classMethods = methods,
         classReceive = recv
