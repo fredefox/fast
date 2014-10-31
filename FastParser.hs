@@ -30,11 +30,18 @@ quotedString = do
     char '"'
     manyTill anyChar $ char '"'
 
+keywords :: [String]
+keywords = ["self", "class", "new", "receive", "send", "match", "set"]
+
 name :: Parser Name
 name = do
     c <- letter
-    s <- many alphaNum <|> string "_"
-    return $ c:s
+    cs <- many alphaNum <|> string "_"
+    let s = c:cs in
+        if s `elem` keywords then
+            unexpected s
+        else
+            return s
 
 pattern :: Parser Pattern
 pattern = (integer >>= \i -> return $ ConstInt i)
