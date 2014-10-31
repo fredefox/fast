@@ -44,6 +44,7 @@ ExprEntry        ::= Expr0
 
 Expr0            ::= Integer
                   |  String
+                  |  Name
                   |  Name '(' ArgsEntry ')'
                   |  'self'
                   |  'return' ExprEntry
@@ -53,8 +54,9 @@ Expr0            ::= Integer
 Expr1Entry       ::= Expr1a
                   |  Expr1b
 
-Expr1a           ::= 'match' ExprEntry Cases Expr1EntryOpt
+Expr1a           ::= 'match' ExprEntry '{' Cases '}' Expr1EntryOpt
                   |  'send' '(' ExprEntry ',' ExprEntry ')' Expr1EntryOpt
+                  |  'self' '.' Name Expr1EntryOpt
 
 Expr1b           ::= 'new' Name '(' ArgsEntry ')' Expr1EntryOpt Expr1bOpt
                   |  '(' ExprEntry ')' Expr1EntryOpt Expr1bOpt

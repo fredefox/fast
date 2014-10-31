@@ -37,6 +37,7 @@ Exprs            ::= ''
 
 Expr             ::= Integer
                   |  String
+                  |  Name
                   |  Name '(' ArgsEntry ')'
                   |  'self'
                   |  'return' Expr
@@ -46,8 +47,9 @@ Expr             ::= Integer
                   |  Expr '-' Expr
                   |  Expr '*' Expr
                   |  Expr '/' Expr
-                  |  'match' Expr Cases
+                  |  'match' Expr '{' Cases '}'
                   |  'send' '(' Expr ',' Expr ')'
+                  |  'self' '.' Name
                   |  Expr '.' Name '(' ArgsEntry ')'
                   |  'new' Name '(' ArgsEntry ')'
                   |  '(' Expr ')'

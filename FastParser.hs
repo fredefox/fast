@@ -59,7 +59,8 @@ fastCase = undefined
 expr :: Parser Expr
 expr = expr0 <|> expr1 where
     expr0 = (integer >>= \i -> return $ IntConst i)
-        <|> (name >>= \n -> return $ StringConst n)
+        <|> (quotedString >>= \s -> return $ StringConst s)
+        <|> (name >>= \n -> return $ TermLiteral n [])
         <|> fnApplication
         <|> (string "self" >>= (const $ return Self))
         <|> (string "return" >> expr)
@@ -84,11 +85,13 @@ expr = expr0 <|> expr1 where
                 e <- expr
                 return $ SetVar n e
     expr1 = expr1a <|> expr1b where
-        expr1a = match <|> send where
+        expr1a = match <|> send <|> self where
             match = do
                 string "match"
                 e <- expr
+                char '{'
                 cs <- many fastCase
+                char '}'
                 expr1Opt $ Match e cs
             send = do
                 string "send"
@@ -98,6 +101,11 @@ expr = expr0 <|> expr1 where
                 e1 <- expr
                 char ')'
                 expr1Opt $ SendMessage e0 e1
+            self = do
+                string "self"
+                char '.'
+                n <- name
+                return $ ReadField n
         expr1b = newDef <|> par where
             newDef = do
                 string "new"
