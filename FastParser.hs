@@ -186,6 +186,7 @@ consDecl = do
     string "new"
     char '('
     p <- name `sepBy` char ','
+    char ')'
     char '{'
     e <- expr `sepBy` char ';'
     char '}'
