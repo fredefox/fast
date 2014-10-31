@@ -36,8 +36,26 @@ name = do
     s <- many alphaNum <|> string "_"
     return $ c:s
 
+pattern :: Parser Pattern
+pattern = (integer >>= \i -> return $ ConstInt i)
+    <|> (quotedString >>= \s -> return $ ConstString s)
+    <|> termPattern
+    <|> (name >>= \n -> return $ AnyValue n) where
+        termPattern = do
+            n <- name
+            char '('
+            ns <- name `sepBy` char ','
+            char ')'
+            return $ TermPattern n ns
+
 fastCase :: Parser Case
-fastCase = undefined
+fastCase = do
+    p <- pattern
+    string "->"
+    char '{'
+    es <- expr `sepBy` char ';'
+    char '}'
+    return (p, es)
 
 {-
  - This method has a rather intricate structure. It is preserved in this single
