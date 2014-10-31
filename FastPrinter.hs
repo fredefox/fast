@@ -2,7 +2,10 @@
  - Testing "Fast"-Parser
  - =====================
  -
- - This module implements tests for the Fast-parser.
+ - This module implements pretty printing Fast-expressions.
+ -
+ - NB: This is not really a part of the library and should maybe be placed in
+ - some auxillary place.
  -
  - Written by Frederik Hanghøj Iversen
  - for the course Advanced Programming
@@ -14,7 +17,7 @@
  -          (/\\_  (/\\_
  -
  -}
-module Test.FastParser () where
+module FastPrinter () where
 
 import qualified FastAST as AST
 import qualified FastParser as Parser
