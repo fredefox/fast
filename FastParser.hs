@@ -20,8 +20,8 @@ module FastParser (Error, parseString, parseFile) where
 
 import FastAST
 import Control.Applicative ((<*))
-import Text.Parsec
-import Text.ParserCombinators.Parsec hiding (try)
+import Text.Parsec hiding (token)
+import Text.ParserCombinators.Parsec hiding (try, token)
 
 {-
  - Helper methods
@@ -32,15 +32,20 @@ parseAll prs = parse (prs <* (spaces >> eof)) "Fast"
 {-
  - Custom Parser-combinators
  -}
-symbol :: Parser p -> Parser p
-symbol p = spaces >> p
+token :: Parser p -> Parser p
+token p = spaces >> p
 
+symbol :: String -> Parser String
+symbol = token . string
+
+schar :: Char -> Parser Char
+schar = token . char
 {-
  - These are the more "atomic" parsers. It is the parsers for the values
  - mentioned outside the BNF-proper.
  -}
 integer :: Parser Integer
-integer = fmap read $ integer' where
+integer = token $ fmap read $ integer' where
     integer' :: Parser String
     integer' = do
         s <- optionMaybe $ char '-'
@@ -51,7 +56,7 @@ integer = fmap read $ integer' where
 
 quotedString :: Parser String
 quotedString = do
-    char '"'
+    schar '"'
     manyTill anyChar $ char '"'
 
 {-
@@ -78,18 +83,18 @@ pattern = (integer >>= \i -> return $ ConstInt i)
     <|> (name >>= \n -> return $ AnyValue n) where
         termPattern = do
             n <- name
-            char '('
-            ns <- name `sepBy` char ','
-            char ')'
+            schar '('
+            ns <- name `sepBy` schar ','
+            schar ')'
             return $ TermPattern n ns
 
 fastCase :: Parser Case
 fastCase = do
     p <- pattern
-    string "->"
-    char '{'
-    es <- expr `sepBy` char ';'
-    char '}'
+    symbol "->"
+    schar '{'
+    es <- expr `sepBy` schar ';'
+    schar '}'
     return (p, es)
 
 {-
@@ -128,66 +133,66 @@ expr = expr0 <|> expr1 where
         -- must check to see if there is a parenthesis.
         <|> (name >>= \n -> return $ TermLiteral n [])
         <|> termLiteral
-        <|> (string "self" >>= (const $ return Self))
-        <|> (string "return" >> expr)
+        <|> (symbol "self" >>= (const $ return Self))
+        <|> (symbol "return" >> expr)
         <|> setField
         <|> setVar where
             termLiteral = do
                 n <- name
-                char '('
-                exprs <- expr `sepBy` char ','
-                char ')'
+                schar '('
+                exprs <- expr `sepBy` schar ','
+                schar ')'
                 return $ TermLiteral n exprs
             setField = do
-                string "set"
+                symbol "set"
                 space
-                string "self" >> char '.'
+                symbol "self" >> schar '.'
                 fld <- name
-                char '='
+                schar '='
                 val <- expr
                 return $ SetField fld val
             setVar = do
-                string "set"
+                symbol "set"
                 var <- name
-                char '='
+                schar '='
                 val <- expr
                 return $ SetVar var val
     expr1 = expr1a <|> expr1b where
         expr1a = match <|> send <|> self where
             match = do
-                string "match"
+                symbol "match"
                 key <- expr
-                char '{'
+                schar '{'
                 values <- many fastCase
-                char '}'
+                schar '}'
                 expr1Opt $ Match key values
             send = do
-                string "send"
-                char '('
+                symbol "send"
+                schar '('
                 rcpt <- expr
-                char ','
+                schar ','
                 msg <- expr
-                char ')'
+                schar ')'
                 expr1Opt $ SendMessage rcpt msg
             self = do
-                string "self"
-                char '.'
+                symbol "self"
+                schar '.'
                 n <- name
                 return $ ReadField n
         expr1b = newDef <|> par where
             newDef = do
-                string "new"
+                symbol "new"
                 space
                 n <- name
-                char '('
-                args <- expr `sepBy` char ','
-                char ')'
+                schar '('
+                args <- expr `sepBy` schar ','
+                schar ')'
                 e <- expr1Opt $ New n args
                 expr1bOpt e
             par = do
-                char '('
+                schar '('
                 e <- expr
-                char ')'
+                schar ')'
                 e' <- expr1Opt e
                 expr1bOpt e
             -- Method application (CallMethod)
@@ -195,11 +200,11 @@ expr = expr0 <|> expr1 where
             expr1bOpt inherited = invocation
                 <|> return inherited where
                     invocation = do
-                        char '.'
+                        schar '.'
                         rcpt <- name
-                        char '('
-                        args <- expr `sepBy` char ','
-                        char ')'
+                        schar '('
+                        args <- expr `sepBy` schar ','
+                        schar ')'
                         expr1Opt $ CallMethod inherited rcpt args
         -- Arithmetic
         expr1Opt :: Expr -> Parser Expr
@@ -209,32 +214,32 @@ expr = expr0 <|> expr1 where
             <|> division
             <|> return inherited where
                 plus = do
-                    char '+'
+                    schar '+'
                     e <- expr
                     expr1Opt e
                 minus = do
-                    char '-'
+                    schar '-'
                     e <- expr
                     expr1Opt e
                 mult = do
-                    char '*'
+                    schar '*'
                     e <- expr
                     expr1Opt e
                 division = do
-                    char '/'
+                    schar '/'
                     e <- expr
                     expr1Opt e
 
 consDecl :: Parser ConstructorDecl
 consDecl = do
-    string "new"
+    symbol "new"
     space
-    char '('
-    p <- name `sepBy` char ','
-    char ')'
-    char '{'
-    e <- expr `sepBy` char ';'
-    char '}'
+    schar '('
+    p <- name `sepBy` schar ','
+    schar ')'
+    schar '{'
+    e <- expr `sepBy` schar ';'
+    schar '}'
     return MethodDecl {
         methodParameters = p,
         methodBody = e
@@ -243,12 +248,12 @@ consDecl = do
 namedMethodDecl :: Parser NamedMethodDecl
 namedMethodDecl = do
     n <- name
-    char '('
-    params <- name `sepBy` char ','
-    char ')'
-    char '{'
-    body <- expr `sepBy` char ';'
-    char '}'
+    schar '('
+    params <- name `sepBy` schar ','
+    schar ')'
+    schar '{'
+    body <- expr `sepBy` schar ';'
+    schar '}'
     return $ NamedMethodDecl n MethodDecl {
         methodParameters = params,
         methodBody = body
@@ -256,14 +261,14 @@ namedMethodDecl = do
 
 receiveDecl :: Parser ReceiveDecl
 receiveDecl = do
-    string "receive"
+    symbol "receive"
     space
-    char '('
+    schar '('
     p <- name
-    char ')'
-    char '{'
-    exprs <- expr `sepBy` char ';'
-    char '}'
+    schar ')'
+    schar '{'
+    exprs <- expr `sepBy` schar ';'
+    schar '}'
     return $ ReceiveDecl {
         receiveParam = p,
         receiveBody = exprs
@@ -271,10 +276,10 @@ receiveDecl = do
 
 classDecl :: Parser ClassDecl
 classDecl = do
-    string "class"
+    symbol "class"
     space
     clsNm <- name
-    char '{'
+    schar '{'
     -- This parse suffers from the same problem as below, the extra quirk is that
     cons <- optionMaybe consDecl
     -- The class-name might fail with a look-ahead of more than 1. I.e. it has
@@ -283,7 +288,7 @@ classDecl = do
     -- in this case it should not parse anything but just give up.
     methods <- many namedMethodDecl
     recv <- optionMaybe receiveDecl
-    char '}'
+    schar '}'
     return ClassDecl {
         className = clsNm,
         classConstructor = cons,
