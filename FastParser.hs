@@ -85,6 +85,19 @@ expr :: Parser Expr
 expr = expr0 <|> expr1 where
     expr0 = (integer >>= \i -> return $ IntConst i)
         <|> (quotedString >>= \s -> return $ StringConst s)
+        -- This parser will *succeed* so `try`ing it won't help it already
+        -- succeeded and consumed input. The problem with this is that just
+        -- below there is a rule that starts with paranthesis. If the
+        -- name-parser already succeeded and we see a parenthesis, we have no
+        -- way of going back and not using that parse. We should therefore
+        -- parse a name in *any* case first, and then see if there's a
+        -- parenthesis.
+        --
+        -- The result of this is that there are things that can't be parsed
+        -- with my current design. I need to structure my code in a very
+        -- complex way such that e.g. `name` is applied (if possible) and when
+        -- applied it will then try parsing on and if it fails, well then it
+        -- must check to see if there is a parenthesis.
         <|> (name >>= \n -> return $ TermLiteral n [])
         <|> termLiteral
         <|> (string "self" >>= (const $ return Self))
@@ -95,6 +108,7 @@ expr = expr0 <|> expr1 where
                 n <- name
                 char '('
                 exprs <- expr `sepBy` char ','
+                char ')'
                 return $ TermLiteral n exprs
             setField = do
                 string "set"
