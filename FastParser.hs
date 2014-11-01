@@ -19,9 +19,20 @@
 module FastParser (Error, parseString, parseFile) where
 
 import FastAST
+import Control.Applicative ((<*))
 import Text.Parsec
 import Text.ParserCombinators.Parsec hiding (try)
 
+{-
+ - Custom Parser-combinators
+ -}
+symbol :: Parser p -> Parser p
+symbol p = spaces >> p
+
+{-
+ - These are the more "atomic" parsers. It is the parsers for the values
+ - mentioned outside the BNF-proper.
+ -}
 integer :: Parser Integer
 integer = fmap read $ many1 digit
 
@@ -30,6 +41,10 @@ quotedString = do
     char '"'
     manyTill anyChar $ char '"'
 
+{-
+ - The parsers that follow are all parsers that parse some produciton-rule in
+ - the BNF.
+ -}
 keywords :: [String]
 keywords = ["self", "class", "new", "receive", "send", "match", "set"]
 
@@ -264,8 +279,12 @@ prog = many classDecl
  -}
 type Error = ParseError
 
+{-
+ - Since our sub-parsers strip leading white-space we must conclude the parse
+ - with one application of `eof`.
+ -}
 parseString :: String -> Either Error Prog
-parseString = parse prog "Fast"
+parseString = parse (prog <* eof) "Fast"
 
 parseFile :: FilePath -> IO (Either Error Prog)
 parseFile path = fmap parseString $ readFile path
