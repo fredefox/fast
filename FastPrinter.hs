@@ -17,7 +17,7 @@
  -          (/\\_  (/\\_
  -
  -}
-module FastPrinter () where
+module FastPrinter where
 
 import qualified FastAST as AST
 import qualified FastParser as Parser
