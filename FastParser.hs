@@ -67,7 +67,7 @@ keywords :: [String]
 keywords = ["self", "class", "new", "receive", "send", "match", "set"]
 
 name :: Parser Name
-name = try $ do
+name = token $ try $ do
     c <- letter
     cs <- many alphaNum <|> string "_"
     let s = c:cs in
