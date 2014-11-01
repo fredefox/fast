@@ -24,6 +24,12 @@ import Text.Parsec
 import Text.ParserCombinators.Parsec hiding (try)
 
 {-
+ - Helper methods
+ -}
+parseAll :: Parser a -> String -> Either Error a
+parseAll prs = parse (prs <* (spaces >> eof)) "Fast"
+
+{-
  - Custom Parser-combinators
  -}
 symbol :: Parser p -> Parser p
@@ -284,7 +290,7 @@ type Error = ParseError
  - with one application of `eof`.
  -}
 parseString :: String -> Either Error Prog
-parseString = parse (prog <* eof) "Fast"
+parseString = parseAll prog
 
 parseFile :: FilePath -> IO (Either Error Prog)
 parseFile path = fmap parseString $ readFile path
