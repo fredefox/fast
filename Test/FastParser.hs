@@ -34,11 +34,42 @@ import Text.PrettyPrint.HughesPJ (render)
  - this class compile we must declare those methods since we can't actually
  - access them via the import-statement.
  -}
-name = undefined
-quotedString = undefined
+--name = undefined
+--quotedString = undefined
 
 newtype FastName = FS Name
     deriving (Eq, Show)
+{-
+alphaFreqList =
+    [ (26, choose ('a', 'z'))
+    , (26, choose ('A', 'Z'))
+    ]
+allCharsFreqList = alphaFreqList ++
+    [ (10, choose ('0', '9'))
+    , (1, pure '_')
+    ]
+
+letter' = frequency alphaFreqList
+letterOrDigit = frequency $ alphaFreqList ++ digitFreqList
+
+identifierGenerator = liftM2 (:) letter' $
+  sized (\n -> replicateM n letterOrDigit)
+-}
+nameGenerator = liftM2 (:) gen0 $ sized $ sizedExpr where
+    sizedExpr = \n -> replicateM n gen1
+    -- Produces legal beginning characters
+    gen0 = frequency firstChars
+    -- Produces the other legal character a name can contain
+    gen1 = frequency legalChars
+    -- And here are the frequency lists for these characters
+    firstChars =
+        [ (26, choose ('a', 'z'))
+        , (26, choose ('A', 'Z'))
+        ]
+    legalChars = firstChars ++
+        [ (10, choose ('0', '9'))
+        , (1, pure '_')
+        ]
 
 instance Arbitrary FastName where
     arbitrary = fmap FS $ listOf $ elements alphaNum where
@@ -80,33 +111,45 @@ instance Arbitrary Pattern where
     arbitrary = oneof
         [ liftM ConstInt arbitrary
         , liftM ConstString arbitrary
-        , liftM2 TermPattern arbitrary arbitrary
-        , liftM AnyValue arbitrary
+        , liftM2 TermPattern nameGenerator $ listOf nameGenerator
+        , liftM AnyValue nameGenerator
         ]
 
 instance Arbitrary Expr where
     arbitrary = oneof
         [ liftM IntConst arbitrary
         , liftM StringConst arbitrary
-        , liftM2 TermLiteral arbitrary arbitrary
+        , liftM2 TermLiteral nameGenerator arbitrary
         , pure Self
         , liftM2 Plus arbitrary arbitrary
         , liftM2 Minus arbitrary arbitrary
         , liftM2 Times arbitrary arbitrary
         , liftM2 DividedBy arbitrary arbitrary
         , liftM Return arbitrary
-        , liftM2 SetField arbitrary arbitrary
-        , liftM2 SetVar arbitrary arbitrary
-        , liftM ReadVar arbitrary
-        , liftM ReadField arbitrary
+        , liftM2 SetField nameGenerator arbitrary
+        , liftM2 SetVar nameGenerator arbitrary
+        , liftM ReadVar nameGenerator
+        , liftM ReadField nameGenerator
         , liftM2 Match arbitrary arbitrary
         , liftM2 SendMessage arbitrary arbitrary
-        , liftM3 CallMethod arbitrary arbitrary arbitrary
-        , liftM2 New arbitrary arbitrary
+        , liftM3 CallMethod arbitrary nameGenerator arbitrary
+        , liftM2 New nameGenerator arbitrary
         ]
 
+f :: Gen FastName -> Gen FastName
+f = id
+
+instance Arbitrary ReceiveDecl where
+    arbitrary = liftM2 ReceiveDecl nameGenerator arbitrary
+
+instance Arbitrary NamedMethodDecl where
+    arbitrary = liftM2 NamedMethodDecl nameGenerator arbitrary
+
+instance Arbitrary ClassDecl where
+    arbitrary = liftM4 ClassDecl nameGenerator arbitrary (listOf arbitrary) arbitrary
+
 instance Arbitrary MethodDecl where
-    arbitrary = liftM2 MethodDecl arbitrary arbitrary
+    arbitrary = liftM2 MethodDecl (listOf nameGenerator) arbitrary
 
 checkProgramParser :: Prog -> Property
 checkProgramParser prog =
