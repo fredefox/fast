@@ -34,8 +34,8 @@ import Text.PrettyPrint.HughesPJ (render)
  - this class compile we must declare those methods since we can't actually
  - access them via the import-statement.
  -}
---name = undefined
---quotedString = undefined
+name = undefined
+quotedString = undefined
 
 newtype FastName = FS Name
     deriving (Eq, Show)
