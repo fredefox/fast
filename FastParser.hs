@@ -133,13 +133,14 @@ expr = expr0 <|> expr1 where
                 return $ TermLiteral n exprs
             setField = do
                 string "set"
+                space
                 string "self" >> char '.'
                 fld <- name
                 char '='
                 val <- expr
                 return $ SetField fld val
             setVar = do
-                string "set" >> string "self" >> char '.'
+                string "set"
                 var <- name
                 char '='
                 val <- expr
@@ -261,11 +262,13 @@ receiveDecl = do
 classDecl :: Parser ClassDecl
 classDecl = do
     string "class"
+    space
     clsNm <- name
     char '{'
     cons <- optionMaybe consDecl
     methods <- many namedMethodDecl
     recv <- optionMaybe receiveDecl
+    char '}'
     return ClassDecl {
         className = clsNm,
         classConstructor = cons,
