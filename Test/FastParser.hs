@@ -22,7 +22,7 @@ module Test.FastParser where
 import FastParser
 import FastAST
 import FastPrinter
-import Control.Applicative
+import Control.Applicative hiding ((<|>))
 import Control.Monad
 import Text.Parsec
 import Test.QuickCheck

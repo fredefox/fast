@@ -40,7 +40,14 @@ symbol p = spaces >> p
  - mentioned outside the BNF-proper.
  -}
 integer :: Parser Integer
-integer = fmap read $ many1 digit
+integer = fmap read $ integer' where
+    integer' :: Parser String
+    integer' = do
+        s <- optionMaybe $ char '-'
+        ds <- many1 digit
+        case s of
+            Nothing -> return ds
+            Just a -> return $ a:ds
 
 quotedString :: Parser String
 quotedString = do
@@ -55,7 +62,7 @@ keywords :: [String]
 keywords = ["self", "class", "new", "receive", "send", "match", "set"]
 
 name :: Parser Name
-name = do
+name = try $ do
     c <- letter
     cs <- many alphaNum <|> string "_"
     let s = c:cs in
@@ -170,6 +177,7 @@ expr = expr0 <|> expr1 where
         expr1b = newDef <|> par where
             newDef = do
                 string "new"
+                space
                 n <- name
                 char '('
                 args <- expr `sepBy` char ','
@@ -220,6 +228,7 @@ expr = expr0 <|> expr1 where
 consDecl :: Parser ConstructorDecl
 consDecl = do
     string "new"
+    space
     char '('
     p <- name `sepBy` char ','
     char ')'
@@ -248,6 +257,7 @@ namedMethodDecl = do
 receiveDecl :: Parser ReceiveDecl
 receiveDecl = do
     string "receive"
+    space
     char '('
     p <- name
     char ')'
@@ -265,7 +275,12 @@ classDecl = do
     space
     clsNm <- name
     char '{'
+    -- This parse suffers from the same problem as below, the extra quirk is that
     cons <- optionMaybe consDecl
+    -- The class-name might fail with a look-ahead of more than 1. I.e. it has
+    -- to look at more than the next characters to decide if it fails. This is
+    -- especially the case if it encounters a reserved keyword (like `receive`)
+    -- in this case it should not parse anything but just give up.
     methods <- many namedMethodDecl
     recv <- optionMaybe receiveDecl
     char '}'

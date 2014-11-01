@@ -127,19 +127,20 @@ printPattern (AST.TermPattern n ns) = printName n
 printPattern (AST.AnyValue val) = printName val
 
 printClassDecl :: AST.ClassDecl -> Doc
-printClassDecl (AST.ClassDecl clsNm cons methds recv) = text "class"
+printClassDecl (AST.ClassDecl clsNm cons methds recv) = text "class "
     <> printName clsNm
     <> text "{"
     <> printCons cons
     <> (cat $ fmap printNamedMethodDecl methds)
-    <> printRecv recv where
+    <> printRecv recv
+    <> text "}" where
         printCons Nothing = text ""
         printCons (Just c) = printMethodDecl c
         printRecv Nothing = text ""
         printRecv (Just r) = printReceiveDecl r
 
 printReceiveDecl :: AST.ReceiveDecl -> Doc
-printReceiveDecl (AST.ReceiveDecl param body) = text "receive"
+printReceiveDecl (AST.ReceiveDecl param body) = text "receive "
     <> text "("
     <> printName param
     <> text ")"
@@ -159,7 +160,7 @@ printNamedMethodDecl (AST.NamedMethodDecl name decl) = printName name
         AST.MethodDecl params body = decl
 
 printMethodDecl :: AST.MethodDecl -> Doc
-printMethodDecl (AST.MethodDecl params body) = text "new"
+printMethodDecl (AST.MethodDecl params body) = text "new "
     <> text "("
     <> (cat $ Data.List.intersperse comma $ fmap printName params)
     <> text ")"
