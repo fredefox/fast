@@ -21,7 +21,7 @@ module Test.FastParser where
 
 import FastParser
 import FastAST
-import FastPrinter
+import Test.FastPrinter
 import Control.Applicative hiding ((<|>))
 import Control.Monad
 import Text.Parsec
