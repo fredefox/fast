@@ -1,8 +1,5 @@
 module FastInterpreter
-       ( runProg
-       , Error (..)
-       )
-       where
+    (runProg, Error (..)) where
 
 import FastAST
 
@@ -17,15 +14,15 @@ data Hole = Hole
 -- (or remove the existing ones) if you want.  Just make sure it is
 -- still an instance of 'Show' and 'Eq'.
 data Error = Error String
-             deriving (Show, Eq)
+    deriving (Show, Eq)
 
 -- | Give the printed representation of a value.
 printed :: Value -> String
 printed (IntValue x) = show x
 printed (StringValue s) = s
 printed (ReferenceValue ref) = "#<object " ++ show ref ++ ">"
-printed (TermValue (Term sym vs)) =
-  sym ++ "(" ++ intercalate ", " (map printed vs) ++ ")"
+printed (TermValue (Term sym vs))
+    = sym ++ "(" ++ intercalate ", " (map printed vs) ++ ")"
 
 -- | A key-value store where the keys are of type @k@, and the values
 -- are of type @v@.  Used for mapping object references to objects and
@@ -54,21 +51,20 @@ data MethodState
 -- Maintains the global state, the running output, and whether or not
 -- an error has occurred.
 data FastM a = FastM {
-  runFastM :: Prog -> GlobalState
-           -> Hole
-  }
+        runFastM :: Prog -> GlobalState -> Hole
+    }
 
 instance Functor FastM where
-  fmap = liftM
+    fmap = liftM
 
 instance Applicative FastM where
-  pure = return
-  (<*>) = ap
+    pure = return
+    (<*>) = ap
 
 instance Monad FastM where
-  return = undefined
-  (>>=) = undefined
-  fail = undefined
+    return = undefined
+    (>>=) = undefined
+    fail = undefined
 
 -- | Add the 'printed' representation of the value to the output.
 printValue :: Value -> FastM ()
@@ -110,21 +106,20 @@ allocUniqID = undefined
 -- Note that since FastMethodM runs on top of FastM, a FastMethodM
 -- action has access to the global state (through liftFastM).
 data FastMethodM a = FastMethodM {
-  runFastMethodM :: ObjectReference -> MethodState
-                 -> FastM Hole
-  }
+        runFastMethodM :: ObjectReference -> MethodState -> FastM Hole
+    }
 
 instance Functor FastMethodM where
-  fmap = liftM
+    fmap = liftM
 
 instance Applicative FastMethodM where
-  pure = return
-  (<*>) = ap
+    pure = return
+    (<*>) = ap
 
 instance Monad FastMethodM where
-  return = liftFastM . return
-  fail = liftFastM . fail
-  (>>=) = undefined
+    return = liftFastM . return
+    fail = liftFastM . fail
+    (>>=) = undefined
 
 -- | Perform a 'FastM' operation inside a 'FastMethodM'.
 liftFastM :: FastM a -> FastMethodM a
@@ -146,12 +141,14 @@ putMethodState :: MethodState -> FastMethodM ()
 putMethodState = undefined
 
 getsMethodState :: (MethodState -> a) -> FastMethodM a
-getsMethodState f = do s <- getMethodState
-                       return $ f s
+getsMethodState f = do
+    s <- getMethodState
+    return $ f s
 
 modifyMethodState :: (MethodState -> MethodState) -> FastMethodM ()
-modifyMethodState f = do s <- getMethodState
-                         putMethodState $ f s
+modifyMethodState f = do
+    s <- getMethodState
+    putMethodState $ f s
 
 getObjectState :: FastMethodM ObjectState
 getObjectState = undefined
@@ -160,12 +157,14 @@ putObjectState :: ObjectState -> FastMethodM ()
 putObjectState = undefined
 
 getsObjectState :: (ObjectState -> a) -> FastMethodM a
-getsObjectState f = do s <- getObjectState
-                       return $ f s
+getsObjectState f = do
+    s <- getObjectState
+    return $ f s
 
 modifyObjectState :: (ObjectState -> ObjectState) -> FastMethodM ()
-modifyObjectState f = do s <- getObjectState
-                         putObjectState $ f s
+modifyObjectState f = do
+    s <- getObjectState
+    putObjectState $ f s
 -}
 
 -- | Find the declaration of the class with the given name, or cause
@@ -185,10 +184,11 @@ sendMessageTo = undefined
 -- which to run, the initial variable bindings (probably the
 -- parameters of the method, constructor or receive action), and the
 -- body.  Returns a value and the new state of the object.
-evalMethodBody :: ObjectReference
-               -> [(Name, Value)]
-               -> Exprs
-               -> FastM (Value, ObjectState)
+evalMethodBody
+    :: ObjectReference
+    -> [(Name, Value)]
+    -> Exprs
+    -> FastM (Value, ObjectState)
 evalMethodBody = undefined
 
 evalExprs :: [Expr] -> FastMethodM Value
