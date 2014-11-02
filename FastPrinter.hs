@@ -49,13 +49,14 @@ printQuotedString s = text $ '"' : s' ++ ['"'] where
 printTerm :: AST.Term -> Doc
 -- TODO
 -- Please also note that there is no parser generating a `Term`
-printTerm (AST.Term name values) = undefined
+printTerm (AST.Term name values) = error "Error printing undefined for `Term _ _`"
 
 printValue :: AST.Value -> Doc
 -- TODO
-printValue (AST.TermValue t) = undefined -- No parse generating this
-printValue (AST.IntValue i) = undefined
-printValue (AST.StringValue s) = undefined
+printValue (AST.TermValue t)
+    = error "Error printing undefined for `TermValue _`" -- No parse generating this
+printValue (AST.IntValue i) = error "Error printing undefined for `IntValue _`"
+printValue (AST.StringValue s) = error "Error printing undefined for `StringValue`"
 
 printExpr :: AST.Expr -> Doc
 printExpr (AST.IntConst i) = text $ show i
@@ -70,30 +71,30 @@ printExpr (AST.Minus e0 e1) = printExpr e0 <> text "-" <> printExpr e1
 printExpr (AST.Times e0 e1) = printExpr e0 <> text "*" <> printExpr e1
 printExpr (AST.DividedBy e0 e1) = printExpr e0 <> text "/" <> printExpr e1
 -- TODO: Nothing parses this
-printExpr (AST.Return e) = undefined
-printExpr (AST.SetField fld val) = text "set"
+printExpr (AST.Return e) = text "return " <> printExpr e
+printExpr (AST.SetField fld val) = text "set "
     <> text "self"
     <> text "."
     <> printName fld
     <> text "="
     <> printExpr val
-printExpr (AST.SetVar var val) = text "set"
+printExpr (AST.SetVar var val) = text "set "
     <> text "self"
     <> text "."
     <> printName var
     <> text "="
     <> printExpr val
 -- TODO: Nothing parses this
-printExpr (AST.ReadVar var) = undefined
+printExpr (AST.ReadVar var) = error "Error printing undefined for `ReadVar _`"
 printExpr (AST.ReadField fld) = text "self"
     <> text "."
     <> printName fld
-printExpr (AST.Match key values) = text "match"
+printExpr (AST.Match key values) = text "match "
     <> printExpr key
     <> text "{"
     <> (cat $ fmap printCase values)
     <> text "}"
-printExpr (AST.SendMessage rcpt msg) = text "send"
+printExpr (AST.SendMessage rcpt msg) = text "send "
     <> text "("
     <> printExpr rcpt
     <> text ","
@@ -104,7 +105,7 @@ printExpr (AST.CallMethod rcpt meth args) = printExpr rcpt
     <> printName meth
     <> (cat $ Data.List.intersperse semi $ fmap printExpr args)
     <> text ")"
-printExpr (AST.New n args) = text "new"
+printExpr (AST.New n args) = text "new "
     <> printName n
     <> text "("
     <> (cat $ Data.List.intersperse comma $ fmap printExpr args)

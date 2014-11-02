@@ -115,7 +115,7 @@ fastCase = do
  - into smaller pieces.
  -}
 expr :: Parser Expr
-expr = expr0 <|> expr1 where
+expr = token $ expr0 <|> expr1 where
     expr0 = (integer >>= \i -> return $ IntConst i)
         <|> (quotedString >>= \s -> return $ StringConst s)
         -- This parser will *succeed* so `try`ing it won't help it already
@@ -131,8 +131,8 @@ expr = expr0 <|> expr1 where
         -- complex way such that e.g. `name` is applied (if possible) and when
         -- applied it will then try parsing on and if it fails, well then it
         -- must check to see if there is a parenthesis.
+        <|> try termLiteral
         <|> (name >>= \n -> return $ TermLiteral n [])
-        <|> termLiteral
         <|> (symbol "self" >>= (const $ return Self))
         <|> (symbol "return" >> expr)
         <|> setField
@@ -153,12 +153,13 @@ expr = expr0 <|> expr1 where
                 return $ SetField fld val
             setVar = do
                 symbol "set"
+                space
                 var <- name
                 schar '='
                 val <- expr
                 return $ SetVar var val
     expr1 = expr1a <|> expr1b where
-        expr1a = match <|> send <|> self where
+        expr1a = try match <|> try send <|> try self where
             match = do
                 symbol "match"
                 key <- expr
@@ -179,7 +180,7 @@ expr = expr0 <|> expr1 where
                 schar '.'
                 n <- name
                 return $ ReadField n
-        expr1b = newDef <|> par where
+        expr1b = try newDef <|> par where
             newDef = do
                 symbol "new"
                 space
@@ -262,7 +263,6 @@ namedMethodDecl = do
 receiveDecl :: Parser ReceiveDecl
 receiveDecl = do
     symbol "receive"
-    space
     schar '('
     p <- name
     schar ')'
