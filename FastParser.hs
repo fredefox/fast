@@ -233,7 +233,7 @@ expr = token $ expr0 <|> expr1 where
 
 consDecl :: Parser ConstructorDecl
 consDecl = do
-    symbol "new"
+    try $ symbol "new"
     space
     schar '('
     p <- name `sepBy` schar ','
