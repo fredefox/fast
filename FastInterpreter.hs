@@ -11,6 +11,8 @@ import Control.Monad
 import Data.List
 import Data.Maybe
 
+data Hole = Hole
+
 -- ^ Any runtime error.  You may add more constructors to this type
 -- (or remove the existing ones) if you want.  Just make sure it is
 -- still an instance of 'Show' and 'Eq'.
@@ -28,7 +30,7 @@ printed (TermValue (Term sym vs)) =
 -- | A key-value store where the keys are of type @k@, and the values
 -- are of type @v@.  Used for mapping object references to objects and
 -- variable names to values.
-type Store k v = ...
+type Store k v = Hole
 
 -- | A mapping from object references to objects.
 type GlobalStore = Store ObjectReference ObjectState
@@ -53,7 +55,7 @@ data MethodState
 -- an error has occurred.
 data FastM a = FastM {
   runFastM :: Prog -> GlobalState
-           -> ...
+           -> Hole
   }
 
 instance Functor FastM where
@@ -109,7 +111,7 @@ allocUniqID = undefined
 -- action has access to the global state (through liftFastM).
 data FastMethodM a = FastMethodM {
   runFastMethodM :: ObjectReference -> MethodState
-                 -> FastM ...
+                 -> FastM Hole
   }
 
 instance Functor FastMethodM where
