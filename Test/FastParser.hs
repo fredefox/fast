@@ -21,7 +21,7 @@ module Test.FastParser where
 
 import FastParser
 import FastAST
-import FastPrinter
+import Test.FastPrinter
 import Control.Applicative hiding ((<|>))
 import Control.Monad
 import Text.Parsec
@@ -71,6 +71,13 @@ nameGenerator = liftM2 (:) gen0 $ sized $ sizedExpr where
         , (1, pure '_')
         ]
 
+quotedStringGenerator = liftM2 (:) quot rest where
+    rest = liftM2 (++) nonQuots ( fmap (\i -> [i]) quot )
+    quot :: Gen Char
+    quot = pure '"'
+    nonQuots :: Gen String
+    nonQuots = listOf $ elements $ ['\32'..'\33'] ++ ['\35'..'\126']
+
 instance Arbitrary FastName where
     arbitrary = fmap FS $ listOf $ elements alphaNum where
         alpha = ['a'..'z']
@@ -110,7 +117,7 @@ instance Arbitrary QuotedString where
 instance Arbitrary Pattern where
     arbitrary = oneof
         [ liftM ConstInt arbitrary
-        , liftM ConstString arbitrary
+        , liftM ConstString quotedStringGenerator
         , liftM2 TermPattern nameGenerator $ listOf nameGenerator
         , liftM AnyValue nameGenerator
         ]
@@ -118,7 +125,7 @@ instance Arbitrary Pattern where
 instance Arbitrary Expr where
     arbitrary = oneof
         [ liftM IntConst arbitrary
-        , liftM StringConst arbitrary
+        , liftM StringConst quotedStringGenerator
         , liftM2 TermLiteral nameGenerator arbitrary
         , pure Self
         , liftM2 Plus arbitrary arbitrary
