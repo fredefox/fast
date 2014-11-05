@@ -158,10 +158,7 @@ setObject ref state = FastM $ set ref state where
 -- | Get a unique, fresh, never-before used object reference for use
 -- to identify a new object.
 allocUniqID :: FastM ObjectReference
-allocUniqID = FastM $ \p s -> Right (p, s, id s) where
-    id :: GlobalState -> ObjectReference
-    -- TODO: This will not work if any elements have been removed from the map!
-    id = succ . lastRef
+allocUniqID = FastM $ \p s -> Right (p, s, succ . lastRef $ s)
 
 
 -- | The monad in which methods (and constructors and receive actions)
