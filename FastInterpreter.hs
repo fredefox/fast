@@ -3,6 +3,7 @@ module FastInterpreter
 
 import FastAST
 
+import Text.Printf
 import Control.Applicative
 import Control.Monad
 import Data.List
@@ -47,7 +48,6 @@ type MethodVariables = Store Name Value
 data GlobalState
     = GlobalState {
         progState :: GlobalStore,
-        curObj :: ObjectReference,
         output :: String,
         lastRef :: ObjectReference
     }
@@ -270,7 +270,7 @@ findClassDecl n = do
     let p :: ClassDecl -> Bool
         p c = className c == n in
         case find p prog of
-            Nothing -> fail "No such Class Declaration"
+            Nothing -> fail $ printf "No class declaration with name `%s`" n
             Just a -> return a
 
 -- | Instantiate the class with the given name, passing the given
@@ -364,7 +364,8 @@ evalExpr e = case e of
     -- `o`: Object, `m`: Methods, `ps`: parameters
     (CallMethod o m ps) -> undefined
     (New n es) -> do
-        ref <- liftFastM $ createObject n $ evls es where
+        ref <- liftFastM $ createObject n $ evls es
+        undefined where
             evls :: [Expr] -> [Value]
             evls = undefined
 
@@ -372,16 +373,6 @@ evalExpr e = case e of
 --    (val, _) <- liftFastM $ evalMethodBody 0 [] [e]
 --    return val
 
-initial :: Prog -> GlobalState
-initial p =
-    GlobalState {
-        progState = Map.empty,
-        curObj = c,
-        output = "",
-        lastRef = 0
-    } where
-        c :: ObjectReference
-        c = 0
 {-
  - I will try to solve this puzzle by piecing together the types.
  -
@@ -390,13 +381,13 @@ initial p =
  -     printed :: Value -> String
  -}
 runProg :: Prog -> Either Error String
-runProg prog = undefined{-
-    = runFastMethodM bla objRef methodState where
-        bla = fmap printed $ evalExprs []
-        -- initial object reference
-        objRef :: ObjectReference
-        objRef = undefined
-        -- initial method state
-        methodState :: MethodState
-        methodState = undefined
--}
+runProg prog = let
+    initM = createObject "Main" []
+    init = GlobalState {
+        progState = Map.empty,
+        output = "",
+        lastRef = 0
+    } in
+    case runFastM initM prog init of
+        Left e -> Left e
+        Right (_, a, _) -> Right $ output a
