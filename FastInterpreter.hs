@@ -341,12 +341,15 @@ evalExpr e = case e of
     -- Use `modifyMethodState`
     (SetField fld e) -> do
         v <- evalExpr e
+        modifyObjectState $ mod v
+        return v where
+            mod :: Value -> ObjectState -> ObjectState
+            mod v (ObjectState flds) = ObjectState $ Map.insert fld v flds
+    (SetVar fld e) -> do
+        v <- evalExpr e
         modifyMethodState $ mod v
         return v where
-            mod v s = s { varState = Map.insert fld v $ varState s }
-    (SetVar fld e) -> undefined {-do
-        v <- evalExpr e
-        modifyMethodState-}
+            mod v (MethodState vars) = MethodState $ Map.insert fld v vars
     (ReadVar var) -> undefined
     (ReadField fld) -> undefined
     (Match es cs) -> undefined
