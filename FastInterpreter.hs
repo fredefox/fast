@@ -369,17 +369,6 @@ evalExpr e = case e of
             evls :: [Expr] -> [Value]
             evls = undefined
 
---do
---    (val, _) <- liftFastM $ evalMethodBody 0 [] [e]
---    return val
-
-{-
- - I will try to solve this puzzle by piecing together the types.
- -
- -     runFastM :: Prog -> GlobalState -> Hole
- -     evalExprs :: [Expr] -> FastMethodM Value
- -     printed :: Value -> String
- -}
 runProg :: Prog -> Either Error String
 runProg prog = let
     initM = createObject "Main" []
