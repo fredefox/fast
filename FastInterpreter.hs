@@ -6,6 +6,7 @@ import FastAST
 import Control.Applicative
 import Control.Monad
 import Data.List
+import qualified Data.Map as Map
 import Data.Maybe
 
 data Hole = Hole
@@ -27,7 +28,7 @@ printed (TermValue (Term sym vs))
 -- | A key-value store where the keys are of type @k@, and the values
 -- are of type @v@.  Used for mapping object references to objects and
 -- variable names to values.
-type Store k v = Hole
+type Store k v = Map.Map k v
 
 -- | A mapping from object references to objects.
 type GlobalStore = Store ObjectReference ObjectState
@@ -38,20 +39,58 @@ type ObjectFields = Store Name Value
 -- | A mapping from variable names to variable values.
 type MethodVariables = Store Name Value
 
--- | The global state of the program execution.
+{-
+ - The global state of the program execution.
+ -
+ - The global state must be the state of all the objects in the program.
+ -}
 data GlobalState
+    = GlobalState {
+        progState :: GlobalStore,
+        curObj :: ObjectReference,
+        output :: String,
+        lastRef :: ObjectReference
+    }
 
--- | The state of a single object.
+{-
+ - The state of a single object.
+ -}
 data ObjectState
+    = ObjectState {
+        fields :: ObjectFields,
+        curMethod :: MethodState,
+        classDecl :: ClassDecl
+    }
 
 -- | The state of a method execution.
 data MethodState
+    = MethodState {
+        varState :: MethodVariables,
+        pc :: Int
+    }
 
--- | The basic monad in which execution of a Fast program takes place.
--- Maintains the global state, the running output, and whether or not
--- an error has occurred.
+{-
+ - The basic monad in which execution of a Fast program takes place. Maintains
+ - the global state, the running output, and whether or not an error has
+ - occurred.
+ -
+ - I was thinking that it must nessecarily also hold a reference to the program.
+ - Otherwise one application of the function inside the monad will make it
+ - forget the whole thing. But then it occured to me that the program gets
+ -}
 data FastM a = FastM {
-        runFastM :: Prog -> GlobalState -> Hole
+        runFastM
+            :: Prog
+            -> GlobalState
+            -> Either Error (GlobalState, a)
+            -- This is the part I am unsure about
+            -- This:
+            --
+            --     (Prog, GlobalState, a)
+            --
+            -- or this:
+            --
+            --     (GlobalState, a)
     }
 
 instance Functor FastM where
@@ -62,42 +101,64 @@ instance Applicative FastM where
     (<*>) = ap
 
 instance Monad FastM where
-    return = undefined
+    -- Just shove whatever `a` is inside this here monad.
+    -- return :: a -> FastM a
+    return a = FastM $ \prog gState -> Right (gState, a)
+    -- (>>=) :: FastM a -> (a -> FastM b) -> FastM b
     (>>=) = undefined
     fail = undefined
 
 -- | Add the 'printed' representation of the value to the output.
 printValue :: Value -> FastM ()
-printValue = undefined
+printValue v = FastM $ \p s -> Right (s' s, ()) where
+    s' s = s {
+        output = printed v ++ output s
+    }
 
 -- | Get the program being executed.
 askProg :: FastM Prog
-askProg = undefined
+askProg = FastM $ \p s -> Right (s, p)
 
-{-
 getGlobalState :: FastM GlobalState
-getGlobalState = undefined
+getGlobalState = FastM $ \p s -> Right (s, s)
 
 putGlobalState :: GlobalState -> FastM ()
-putGlobalState = undefined
+putGlobalState s = FastM $ const . const $ Right (s, ())
 
 modifyGlobalState :: (GlobalState -> GlobalState) -> FastM ()
-modifyGlobalState = undefined
+modifyGlobalState f = FastM $ \p s -> Right (f s, ())
 
 modifyGlobalStore :: (GlobalStore -> GlobalStore) -> FastM ()
-modifyGlobalStore = undefined
+modifyGlobalStore f = modifyGlobalState f' where
+    -- This just applies `f` inside the progState of the globalState
+    f' s = s { progState = f . progState $ s }
 
 lookupObject :: ObjectReference -> FastM ObjectState
-lookupObject = undefined
+lookupObject ref = FastM $ \p -> look ref where
+    look :: ObjectReference -> GlobalState -> Either Error (GlobalState, ObjectState)
+    look ref s = case Map.lookup ref $ progState s of
+        Nothing -> Left $ Error "Non-existing object"
+        Just a -> Right (s, a)
 
 setObject :: ObjectReference -> ObjectState -> FastM ()
-setObject = undefined
+setObject ref state = FastM $ \p -> set ref state where
+    set :: ObjectReference
+        -> ObjectState -> GlobalState
+        -> Either Error (GlobalState, ())
+    set key value s = Right $ (s', ()) where
+        s' = s {
+            progState = Map.insert key value $ progState s,
+            lastRef = succ . lastRef $ s
+        }
 
 -- | Get a unique, fresh, never-before used object reference for use
 -- to identify a new object.
 allocUniqID :: FastM ObjectReference
-allocUniqID = undefined
--}
+allocUniqID = FastM $ \p s -> Right (s, id s) where
+    id :: GlobalState -> ObjectReference
+    -- TODO: This will not work if any elements have been removed from the map!
+    id = succ . lastRef
+
 
 -- | The monad in which methods (and constructors and receive actions)
 -- execute.  Runs on top of 'FastM' - maintains the reference to self,
@@ -106,7 +167,7 @@ allocUniqID = undefined
 -- Note that since FastMethodM runs on top of FastM, a FastMethodM
 -- action has access to the global state (through liftFastM).
 data FastMethodM a = FastMethodM {
-        runFastMethodM :: ObjectReference -> MethodState -> FastM Hole
+        runFastMethodM :: ObjectReference -> MethodState -> FastM a
     }
 
 instance Functor FastMethodM where
@@ -123,22 +184,40 @@ instance Monad FastMethodM where
 
 -- | Perform a 'FastM' operation inside a 'FastMethodM'.
 liftFastM :: FastM a -> FastMethodM a
-liftFastM = undefined
+-- op :: Prog -> GlobalState -> Either Error (GlobalState, a)
+--
+--     FastMethodM $ ObjectReference -> MethodState -> FastM ...
+--
+-- where I have chosen ... to be:
+--
+--     a
+liftFastM m = FastMethodM $ \ref s -> m
 
--- | Who are we?
+-- | Who are we? [Who! Who!](https://www.youtube.com/watch?v=PdLIerfXuZ4)
 askSelf :: FastMethodM ObjectReference
-askSelf = undefined
+-- Inside the monad there is a function that takes two arguments and returns
+-- the first one of these (which is the object-reference) in monadic form.
+askSelf = FastMethodM $ const . return
 
 -- | Add the given name-value associations to the variable store.
 bindVars :: [(Name, Value)] -> FastMethodM a -> FastMethodM a
-bindVars = undefined
+bindVars assocs (FastMethodM f) =
+    FastMethodM $ \ref os -> f ref (b os) where
+        -- Performs the actual binding
+        b :: MethodState -> MethodState
+        b os = os { varState = m' } where
+            curFields = varState os
+            -- Insert all the elements from the list individually. The `Map`
+            -- API surely might contain a method for actually doing this that
+            -- is more effecient.
+            m' :: ObjectFields
+            m' = foldl (\m (k, v) -> Map.insert k v m) curFields assocs
 
-{-
 getMethodState :: FastMethodM MethodState
-getMethodState = undefined
+getMethodState = FastMethodM $ const $ return
 
 putMethodState :: MethodState -> FastMethodM ()
-putMethodState = undefined
+putMethodState s = FastMethodM $ undefined
 
 getsMethodState :: (MethodState -> a) -> FastMethodM a
 getsMethodState f = do
@@ -149,7 +228,7 @@ modifyMethodState :: (MethodState -> MethodState) -> FastMethodM ()
 modifyMethodState f = do
     s <- getMethodState
     putMethodState $ f s
-
+{-
 getObjectState :: FastMethodM ObjectState
 getObjectState = undefined
 
@@ -170,7 +249,24 @@ modifyObjectState f = do
 -- | Find the declaration of the class with the given name, or cause
 -- an error if that name is not a class.
 findClassDecl :: Name -> FastM ClassDecl
-findClassDecl = undefined
+findClassDecl n = undefined
+{-FastM $ \p s -> res where
+    res :: Either Error (Prog, GlobalState, a)
+    res = undefined
+    getAll :: GlobalState -> [ObjectReference, ObjectState]
+    getAll = Map.toList . oS
+    -- These are the `ClassDecl`s with matching names.
+    oS :: GlobalState -> GlobalStore -- Map ObjectReference ObjectState
+    oS = Map.filter p . progState
+    -- A predicate over `ObjectState`s
+    p :: ObjectState -> Bool
+    p = (== n) . className . classDecl
+-}
+
+-- This piece of code can give us the class called "Main"
+--
+--     find :: Prog -> Maybe ClassDecl
+--     find $ \cd -> className cd == "Main"
 
 -- | Instantiate the class with the given name, passing the given
 -- values to the constructor.
@@ -197,7 +293,36 @@ evalExprs [e] = evalExpr e
 evalExprs (e:es) = evalExpr e >> evalExprs es
 
 evalExpr :: Expr -> FastMethodM Value
-evalExpr = undefined
+evalExpr e = undefined
+--do
+--    (val, _) <- liftFastM $ evalMethodBody 0 [] [e]
+--    return val
 
+initial :: Prog -> GlobalState
+initial p =
+    GlobalState {
+        progState = Map.empty,
+        curObj = c,
+        output = "",
+        lastRef = 0
+    } where
+        c :: ObjectReference
+        c = 0
+{-
+ - I will try to solve this puzzle by piecing together the types.
+ -
+ -     runFastM :: Prog -> GlobalState -> Hole
+ -     evalExprs :: [Expr] -> FastMethodM Value
+ -     printed :: Value -> String
+ -}
 runProg :: Prog -> Either Error String
-runProg prog = undefined
+runProg prog = undefined{-
+    = runFastMethodM bla objRef methodState where
+        bla = fmap printed $ evalExprs []
+        -- initial object reference
+        objRef :: ObjectReference
+        objRef = undefined
+        -- initial method state
+        methodState :: MethodState
+        methodState = undefined
+-}
