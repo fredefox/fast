@@ -347,22 +347,37 @@ evalExpr e = case e of
         modifyObjectState $ mod v
         return v where
             mod :: Value -> ObjectState -> ObjectState
-            mod v (ObjectState flds) = ObjectState $ Map.insert fld v flds
+            mod v (ObjectState flds)
+                = ObjectState $ Map.insert fld v flds
     (SetVar fld e) -> do
         v <- evalExpr e
         modifyMethodState $ mod v
         return v where
-            mod v (MethodState vars) = MethodState $ Map.insert fld v vars
+            mod v (MethodState vars)
+                = MethodState $ Map.insert fld v vars
     (ReadVar var) -> do
         s <- getMethodState
-        maybe (fail "Non-existing variable") return $ Map.lookup var $ varState s
+        maybe (fail "Non-existing variable") return
+            $ Map.lookup var $ varState s
     (ReadField fld) -> do
         s <- getObjectState
-        maybe (fail "Non-existing field") return $ Map.lookup fld $ fields s
+        maybe (fail "Non-existing field") return
+            $ Map.lookup fld $ fields s
     (Match es cs) -> undefined
     (SendMessage rcvr {-< Receiver -} msg) -> undefined {-< The message -}
     -- `o`: Object, `m`: Methods, `ps`: parameters
     (CallMethod o m ps) -> undefined
+    {-
+     - This seems like rubbish:
+     -
+        do
+        case evalExpr of
+            ObjectReference ref ->
+                decl <- findClassDecl m
+                liftFastM $ evalMethodBody ref (bla decl) body where
+                    bla decl = classMethods decl
+            x -> fail $ printf "Cannot call method on `s`" [show x]
+     -}
     (New n es) -> do
         ref <- liftFastM $ createObject n $ evls es
         undefined where
@@ -371,7 +386,12 @@ evalExpr e = case e of
 
 runProg :: Prog -> Either Error String
 runProg prog = let
-    initM = createObject "Main" []
+    initM = do
+        ref <- createObject "Main" []
+        decl <- findClassDecl "Main"
+        case classConstructor decl of
+            Nothing -> fail "No method in class constructor"
+            Just a -> evalMethodBody ref [] $ methodBody a
     init = GlobalState {
         progState = Map.empty,
         output = "",
