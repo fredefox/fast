@@ -181,7 +181,10 @@ instance Applicative FastMethodM where
 instance Monad FastMethodM where
     return = liftFastM . return
     fail = liftFastM . fail
-    (>>=) = undefined
+    -- (>>=) :: FastMethodM a -> (a -> FastMethodM b) -> FastMethodM b
+    (FastMethodM step) >>= f = FastMethodM $ \ref s -> do
+            a <- step ref s
+            runFastMethodM (f a) ref s
 
 -- | Perform a 'FastM' operation inside a 'FastMethodM'.
 liftFastM :: FastM a -> FastMethodM a
@@ -192,6 +195,8 @@ liftFastM :: FastM a -> FastMethodM a
 -- where I have chosen ... to be:
 --
 --     a
+--
+-- Type-checks, but probably not done.
 liftFastM m = FastMethodM $ \ref s -> m
 
 -- | Who are we? [Who! Who!](https://www.youtube.com/watch?v=PdLIerfXuZ4)
@@ -218,7 +223,8 @@ getMethodState :: FastMethodM MethodState
 getMethodState = FastMethodM $ const $ return
 
 putMethodState :: MethodState -> FastMethodM ()
-putMethodState s = FastMethodM $ undefined
+putMethodState s = liftFastM $ modifyGlobalState f where
+    f = undefined -- TODO
 
 getsMethodState :: (MethodState -> a) -> FastMethodM a
 getsMethodState f = do
@@ -286,7 +292,15 @@ evalMethodBody
     -> [(Name, Value)]
     -> Exprs
     -> FastM (Value, ObjectState)
-evalMethodBody = undefined
+evalMethodBody ref params body = do
+    -- Object state returned
+    s <- lookupObject ref
+    v <- runFastMethodM (evalExprs body) ref $ curMethod s
+    return (v, s') where
+        -- Result of the evaluation
+        res = runFastMethodM (evalExprs body) ref
+        -- Modified object state
+        s' = undefined
 
 evalExprs :: [Expr] -> FastMethodM Value
 evalExprs [] = return $ TermValue $ Term "nil" []
@@ -294,7 +308,25 @@ evalExprs [e] = evalExpr e
 evalExprs (e:es) = evalExpr e >> evalExprs es
 
 evalExpr :: Expr -> FastMethodM Value
-evalExpr e = undefined
+evalExpr e = case e of
+    IntConst i -> return $ IntValue i
+    StringConst s -> return $ StringValue s
+    TermLiteral name es -> undefined
+    Self -> undefined
+    Plus e0 e1 -> undefined
+    Minus e0 e1 -> undefined
+    Times e0 e1 -> undefined
+    DividedBy e0 e1 -> undefined
+    Return e -> undefined
+    SetField fld val -> undefined
+    SetVar fld val -> undefined
+    ReadVar var -> undefined
+    ReadField fld -> undefined
+    Match es cs -> undefined
+    SendMessage rcvr {-< Receiver -} msg -> undefined {-< The message -}
+    CallMethod e {-< Receiver -} n {-< Method name -} es -> undefined-- ^ Method arguments
+    New n es -> undefined
+
 --do
 --    (val, _) <- liftFastM $ evalMethodBody 0 [] [e]
 --    return val
