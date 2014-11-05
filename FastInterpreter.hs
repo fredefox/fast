@@ -299,15 +299,9 @@ evalMethodBody
     -> Exprs
     -> FastM (Value, ObjectState)
 evalMethodBody ref params body = do
-    -- Object state returned
-    s <- lookupObject ref
---    v <- runFastMethodM (evalExprs body) ref $ curMethod s
     v <- runFastMethodM (evalExprs body) ref $ MethodState $ Map.fromList params
-    return (v, s') where
-        -- Result of the evaluation
-        res = runFastMethodM (evalExprs body) ref
-        -- Modified object state
-        s' = undefined
+    s <- lookupObject ref
+    return (v, s)
 
 evalExprs :: [Expr] -> FastMethodM Value
 evalExprs [] = return $ TermValue $ Term "nil" []
