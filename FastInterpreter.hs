@@ -309,23 +309,40 @@ evalExprs (e:es) = evalExpr e >> evalExprs es
 
 evalExpr :: Expr -> FastMethodM Value
 evalExpr e = case e of
-    IntConst i -> return $ IntValue i
-    StringConst s -> return $ StringValue s
-    TermLiteral name es -> undefined
-    Self -> undefined
-    Plus e0 e1 -> undefined
-    Minus e0 e1 -> undefined
-    Times e0 e1 -> undefined
-    DividedBy e0 e1 -> undefined
-    Return e -> undefined
-    SetField fld val -> undefined
-    SetVar fld val -> undefined
-    ReadVar var -> undefined
-    ReadField fld -> undefined
-    Match es cs -> undefined
-    SendMessage rcvr {-< Receiver -} msg -> undefined {-< The message -}
-    CallMethod e {-< Receiver -} n {-< Method name -} es -> undefined-- ^ Method arguments
-    New n es -> undefined
+    (IntConst i) -> return $ IntValue i
+    (StringConst s) -> return $ StringValue s
+    (TermLiteral name es) -> return $ TermValue $ Term name (esToVs es) where
+        -- TODO: `es` are expressions - they should be mapped to values.
+        esToVs = undefined
+    (Self) -> fmap ReferenceValue askSelf
+    (Plus e0 e1) -> do
+        -- If `e0` and `e1` do not evaluate to integer values. Well... then we
+        -- are in trouble. This should only be caused by a *semantically*
+        -- incorrect program.
+        (IntValue v0) <- evalExpr e0
+        (IntValue v1) <- evalExpr e1
+        return $ IntValue $ v0 + v1
+    (Minus e0 e1) -> do
+        (IntValue v0) <- evalExpr e0
+        (IntValue v1) <- evalExpr e1
+        return $ IntValue $ v0 - v1
+    (Times e0 e1) -> do
+        (IntValue v0) <- evalExpr e0
+        (IntValue v1) <- evalExpr e1
+        return $ IntValue $ v0 * v1
+    (DividedBy e0 e1) -> do
+        (IntValue v0) <- evalExpr e0
+        (IntValue v1) <- evalExpr e1
+        return $ IntValue $ v0 `div` v1
+    (Return e) -> undefined
+    (SetField fld val) -> undefined
+    (SetVar fld val) -> undefined
+    (ReadVar var) -> undefined
+    (ReadField fld) -> undefined
+    (Match es cs) -> undefined
+    (SendMessage rcvr {-< Receiver -} msg) -> undefined {-< The message -}
+    (CallMethod e {-< Receiver -} n {-< Method name -} es) -> undefined-- ^ Method arguments
+    (New n es) -> undefined
 
 --do
 --    (val, _) <- liftFastM $ evalMethodBody 0 [] [e]
