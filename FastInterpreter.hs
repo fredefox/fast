@@ -316,6 +316,9 @@ evalExpr e = case e of
         -- TODO: `es` are expressions - they should be mapped to values.
         -- `evalExprs`s left-hand side match but it only returns one value
         -- where the constructor `Term` expects an array of values.
+        --
+        -- Maybe we should `evalMethodBody` on ourselves (`askSelf`). Yet this
+        -- method requires the names of the aruments.
         esToVs = undefined
     (Self) -> fmap ReferenceValue askSelf
     (Plus e0 e1) -> do
@@ -350,12 +353,20 @@ evalExpr e = case e of
         modifyMethodState $ mod v
         return v where
             mod v (MethodState vars) = MethodState $ Map.insert fld v vars
-    (ReadVar var) -> undefined
-    (ReadField fld) -> undefined
+    (ReadVar var) -> do
+        s <- getMethodState
+        maybe (fail "Non-existing variable") return $ Map.lookup var $ varState s
+    (ReadField fld) -> do
+        s <- getObjectState
+        maybe (fail "Non-existing field") return $ Map.lookup fld $ fields s
     (Match es cs) -> undefined
     (SendMessage rcvr {-< Receiver -} msg) -> undefined {-< The message -}
-    (CallMethod e {-< Receiver -} n {-< Method name -} es) -> undefined-- ^ Method arguments
-    (New n es) -> undefined
+    -- `o`: Object, `m`: Methods, `ps`: parameters
+    (CallMethod o m ps) -> undefined
+    (New n es) -> do
+        ref <- liftFastM $ createObject n $ evls es where
+            evls :: [Expr] -> [Value]
+            evls = undefined
 
 --do
 --    (val, _) <- liftFastM $ evalMethodBody 0 [] [e]
