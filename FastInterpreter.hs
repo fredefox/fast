@@ -82,7 +82,7 @@ data FastM a = FastM {
         runFastM
             :: Prog
             -> GlobalState
-            -> Either Error (GlobalState, a)
+            -> Either Error (Prog, GlobalState, a)
             -- This is the part I am unsure about
             -- This:
             --
@@ -103,30 +103,31 @@ instance Applicative FastM where
 instance Monad FastM where
     -- Just shove whatever `a` is inside this here monad.
     -- return :: a -> FastM a
-    return a = FastM $ \prog gState -> Right (gState, a)
+    return a = FastM $ \p s -> Right (p, s, a)
     -- (>>=) :: FastM a -> (a -> FastM b) -> FastM b
-    (>>=) = undefined
-    fail = undefined
+    (FastM step) >>= f = FastM $ \p s -> either Left nextStep $ step p s where
+        nextStep (p', s', a) = runFastM (f a) p' s'
+    fail s = FastM $ const . const $ Left $ Error s
 
 -- | Add the 'printed' representation of the value to the output.
 printValue :: Value -> FastM ()
-printValue v = FastM $ \p s -> Right (s' s, ()) where
+printValue v = FastM $ \p s -> Right (p, s' s, ()) where
     s' s = s {
         output = printed v ++ output s
     }
 
 -- | Get the program being executed.
 askProg :: FastM Prog
-askProg = FastM $ \p s -> Right (s, p)
+askProg = FastM $ \p s -> Right (p, s, p)
 
 getGlobalState :: FastM GlobalState
-getGlobalState = FastM $ \p s -> Right (s, s)
+getGlobalState = FastM $ \p s -> Right (p, s, s)
 
 putGlobalState :: GlobalState -> FastM ()
-putGlobalState s = FastM $ const . const $ Right (s, ())
+putGlobalState s = FastM $ \p -> const $ Right (p, s, ())
 
 modifyGlobalState :: (GlobalState -> GlobalState) -> FastM ()
-modifyGlobalState f = FastM $ \p s -> Right (f s, ())
+modifyGlobalState f = FastM $ \p s -> Right (p, f s, ())
 
 modifyGlobalStore :: (GlobalStore -> GlobalStore) -> FastM ()
 modifyGlobalStore f = modifyGlobalState f' where
@@ -134,18 +135,21 @@ modifyGlobalStore f = modifyGlobalState f' where
     f' s = s { progState = f . progState $ s }
 
 lookupObject :: ObjectReference -> FastM ObjectState
-lookupObject ref = FastM $ \p -> look ref where
-    look :: ObjectReference -> GlobalState -> Either Error (GlobalState, ObjectState)
-    look ref s = case Map.lookup ref $ progState s of
+lookupObject ref = FastM $ look ref where
+    look :: ObjectReference
+        -> Prog -> GlobalState
+        -> Either Error (Prog, GlobalState, ObjectState)
+    look ref p s = case Map.lookup ref $ progState s of
         Nothing -> Left $ Error "Non-existing object"
-        Just a -> Right (s, a)
+        Just a -> Right (p, s, a)
 
 setObject :: ObjectReference -> ObjectState -> FastM ()
-setObject ref state = FastM $ \p -> set ref state where
+setObject ref state = FastM $ set ref state where
     set :: ObjectReference
-        -> ObjectState -> GlobalState
-        -> Either Error (GlobalState, ())
-    set key value s = Right $ (s', ()) where
+        -> ObjectState -> Prog
+        -> GlobalState
+        -> Either Error (Prog, GlobalState, ())
+    set key value p s = Right $ (p, s', ()) where
         s' = s {
             progState = Map.insert key value $ progState s,
             lastRef = succ . lastRef $ s
@@ -154,7 +158,7 @@ setObject ref state = FastM $ \p -> set ref state where
 -- | Get a unique, fresh, never-before used object reference for use
 -- to identify a new object.
 allocUniqID :: FastM ObjectReference
-allocUniqID = FastM $ \p s -> Right (s, id s) where
+allocUniqID = FastM $ \p s -> Right (p, s, id s) where
     id :: GlobalState -> ObjectReference
     -- TODO: This will not work if any elements have been removed from the map!
     id = succ . lastRef
