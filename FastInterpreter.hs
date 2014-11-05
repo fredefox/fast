@@ -235,12 +235,21 @@ modifyMethodState :: (MethodState -> MethodState) -> FastMethodM ()
 modifyMethodState f = do
     s <- getMethodState
     putMethodState $ f s
-{-
+
 getObjectState :: FastMethodM ObjectState
-getObjectState = undefined
+getObjectState = do
+    s <- liftFastM $ getGlobalState
+    ref <- askSelf
+    case Map.lookup ref $ progState s of
+        Nothing -> fail "No such ref"
+        Just a -> return a
 
 putObjectState :: ObjectState -> FastMethodM ()
-putObjectState = undefined
+putObjectState  s = do
+    ref <- askSelf
+    liftFastM $ modifyGlobalState $ mod ref where
+        mod :: ObjectReference -> GlobalState -> GlobalState
+        mod ref store = store { progState = Map.insert ref s $ progState store }
 
 getsObjectState :: (ObjectState -> a) -> FastMethodM a
 getsObjectState f = do
@@ -251,29 +260,18 @@ modifyObjectState :: (ObjectState -> ObjectState) -> FastMethodM ()
 modifyObjectState f = do
     s <- getObjectState
     putObjectState $ f s
--}
+
 
 -- | Find the declaration of the class with the given name, or cause
 -- an error if that name is not a class.
 findClassDecl :: Name -> FastM ClassDecl
-findClassDecl n = undefined
-{-FastM $ \p s -> res where
-    res :: Either Error (Prog, GlobalState, a)
-    res = undefined
-    getAll :: GlobalState -> [ObjectReference, ObjectState]
-    getAll = Map.toList . oS
-    -- These are the `ClassDecl`s with matching names.
-    oS :: GlobalState -> GlobalStore -- Map ObjectReference ObjectState
-    oS = Map.filter p . progState
-    -- A predicate over `ObjectState`s
-    p :: ObjectState -> Bool
-    p = (== n) . className . classDecl
--}
-
--- This piece of code can give us the class called "Main"
---
---     find :: Prog -> Maybe ClassDecl
---     find $ \cd -> className cd == "Main"
+findClassDecl n = do
+    prog <- askProg
+    let p :: ClassDecl -> Bool
+        p c = className c == n in
+        case find p prog of
+            Nothing -> fail "No such Class Declaration"
+            Just a -> return a
 
 -- | Instantiate the class with the given name, passing the given
 -- values to the constructor.
@@ -313,6 +311,8 @@ evalExpr e = case e of
     (StringConst s) -> return $ StringValue s
     (TermLiteral name es) -> return $ TermValue $ Term name (esToVs es) where
         -- TODO: `es` are expressions - they should be mapped to values.
+        -- `evalExprs`s left-hand side match but it only returns one value
+        -- where the constructor `Term` expects an array of values.
         esToVs = undefined
     (Self) -> fmap ReferenceValue askSelf
     (Plus e0 e1) -> do
@@ -334,9 +334,16 @@ evalExpr e = case e of
         (IntValue v0) <- evalExpr e0
         (IntValue v1) <- evalExpr e1
         return $ IntValue $ v0 `div` v1
-    (Return e) -> undefined
-    (SetField fld val) -> undefined
-    (SetVar fld val) -> undefined
+    (Return e) -> evalExpr e
+    -- Use `modifyMethodState`
+    (SetField fld e) -> do
+        v <- evalExpr e
+        modifyMethodState $ mod v
+        return v where
+            mod v s = s { varState = Map.insert fld v $ varState s }
+    (SetVar fld e) -> undefined {-do
+        v <- evalExpr e
+        modifyMethodState-}
     (ReadVar var) -> undefined
     (ReadField fld) -> undefined
     (Match es cs) -> undefined
