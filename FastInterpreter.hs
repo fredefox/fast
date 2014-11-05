@@ -57,16 +57,16 @@ data GlobalState
  -}
 data ObjectState
     = ObjectState {
-        fields :: ObjectFields,
-        curMethod :: MethodState,
-        classDecl :: ClassDecl
+        fields :: ObjectFields
+        --curMethod :: MethodState
+        --classDecl :: ClassDecl
     }
 
 -- | The state of a method execution.
 data MethodState
     = MethodState {
-        varState :: MethodVariables,
-        pc :: Int
+        varState :: MethodVariables
+--        pc :: Int
     }
 
 {-
@@ -276,7 +276,15 @@ findClassDecl n = do
 -- | Instantiate the class with the given name, passing the given
 -- values to the constructor.
 createObject :: Name -> [Value] -> FastM ObjectReference
-createObject = undefined
+createObject n vals = do
+    decl <- findClassDecl n
+    ref <- allocUniqID
+    setObject ref initial
+    return ref where
+        initial :: ObjectState
+        initial = ObjectState {
+            fields = Map.empty
+        }
 
 sendMessageTo :: Value -> Value -> FastM Value
 sendMessageTo = undefined
@@ -293,7 +301,8 @@ evalMethodBody
 evalMethodBody ref params body = do
     -- Object state returned
     s <- lookupObject ref
-    v <- runFastMethodM (evalExprs body) ref $ curMethod s
+--    v <- runFastMethodM (evalExprs body) ref $ curMethod s
+    v <- runFastMethodM (evalExprs body) ref $ MethodState $ Map.fromList params
     return (v, s') where
         -- Result of the evaluation
         res = runFastMethodM (evalExprs body) ref
