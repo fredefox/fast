@@ -74,25 +74,18 @@ data GlobalState
 data ObjectState
     = ObjectState {
         fields :: ObjectFields
-        --curMethod :: MethodState
-        --classDecl :: ClassDecl
-    }
+   }
 
 -- | The state of a method execution.
 data MethodState
     = MethodState {
         varState :: MethodVariables
---        pc :: Int
-    }
+   }
 
 {-
  - The basic monad in which execution of a Fast program takes place. Maintains
  - the global state, the running output, and whether or not an error has
  - occurred.
- -
- - I was thinking that it must nessecarily also hold a reference to the program.
- - Otherwise one application of the function inside the monad will make it
- - forget the whole thing. But then it occured to me that the program gets
  -}
 data FastM a = FastM {
         runFastM
@@ -328,6 +321,7 @@ evalExpr e = case e of
         --
         -- Maybe we should `evalMethodBody` on ourselves (`askSelf`). Yet this
         -- method requires the names of the aruments.
+        esToVs :: [Expr] -> [Value]
         esToVs = undefined
     (Self) -> fmap ReferenceValue askSelf
     (Plus e0 e1) -> do
@@ -372,7 +366,18 @@ evalExpr e = case e of
         s <- getObjectState
         maybe (fail "Non-existing field") return
             $ Map.lookup fld $ fields s
-    (Match es cs) -> undefined
+    (Match e cs) -> do
+        v <- evalExpr e
+        match v cs where
+            match :: Value -> Cases -> FastMethodM Value
+            match _ [] = fail "No matching case-expression"
+            match v ((p, e):ps) = if m v p
+                then evalExprs e
+                else match v ps where
+                    m (IntValue x) (ConstInt y) = x == y
+                    m (StringValue x) (ConstString y) = x == y
+                    -- TODO: Don't know how to match the rest.
+                    m _ _ = False
     (SendMessage rcvr {-< Receiver -} msg) -> undefined {-< The message -}
     -- `o`: Object, `m`: Methods, `ps`: parameters
     (CallMethod o m ps) -> undefined
