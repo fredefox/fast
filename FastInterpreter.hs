@@ -1,3 +1,21 @@
+{-
+ - Interpreter for "Fast"
+ - ======================
+ -
+ - This module implements an interpreter for the language Fast.
+ -
+ - This module follows the specfication outlined in the [hand-out].
+ -
+ - Written by Frederik Hanghøj Iversen
+ - for the course Advanced Programming
+ - at The University of Copenhagen 2014
+ -
+ -     me@fredefox.eu /^._
+ -      ,___,--~~~~--' /'~
+ -      `~--~\ )___,)/'
+ -          (/\\_  (/\\_
+ -
+ -}
 module FastInterpreter
     (runProg, Error (..)) where
 
@@ -9,8 +27,6 @@ import Control.Monad
 import Data.List
 import qualified Data.Map as Map
 import Data.Maybe
-
-data Hole = Hole
 
 -- ^ Any runtime error.  You may add more constructors to this type
 -- (or remove the existing ones) if you want.  Just make sure it is
@@ -83,15 +99,7 @@ data FastM a = FastM {
             :: Prog
             -> GlobalState
             -> Either Error (Prog, GlobalState, a)
-            -- This is the part I am unsure about
-            -- This:
-            --
-            --     (Prog, GlobalState, a)
-            --
-            -- or this:
-            --
-            --     (GlobalState, a)
-    }
+   }
 
 instance Functor FastM where
     fmap = liftM
