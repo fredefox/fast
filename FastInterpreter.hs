@@ -301,6 +301,7 @@ evalMethodBody
 evalMethodBody ref params body = do
     v <- runFastMethodM (evalExprs body) ref $ MethodState $ Map.fromList params
     s <- lookupObject ref
+    modifyGlobalState $ (\gs -> gs { output = output gs ++ printed v })
     return (v, s)
 
 evalExprs :: [Expr] -> FastMethodM Value
